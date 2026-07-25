@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1f46" />
+  <title>Kapachim Custom Manual</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside id="sidebar" class="sidebar">
+      <div class="brand">
+        <button id="closeSidebar" class="icon-btn mobile-only" aria-label="Κλείσιμο μενού">✕</button>
+        <div>
+          <div class="brand-title">KapaChim</div>
+          <div class="brand-subtitle">Custom Manual · D. Lemonis</div>
+        </div>
+      </div>
+      <div class="search-wrap">
+        <span>⌕</span><input id="searchInput" type="search" placeholder="Αναζήτηση τομέα ή εξοπλισμού…" />
+      </div>
+      <nav id="navList" class="nav-list"></nav>
+      <div class="sidebar-foot">Τα αρχικά στοιχεία του PDF παραμένουν ανέπαφα. Οι προσθήκες αποθηκεύονται ξεχωριστά στη συσκευή.</div>
+    </aside>
+
+    <div id="backdrop" class="backdrop"></div>
+
+    <main class="main">
+      <header class="topbar">
+        <button id="openSidebar" class="icon-btn mobile-only" aria-label="Άνοιγμα μενού">☰</button>
+        <div class="topbar-copy">
+          <div id="breadcrumb" class="breadcrumb">Αρχική</div>
+          <h1 id="pageTitle">Προσωπικό Manual</h1>
+        </div>
+        <div class="top-actions">
+          <button id="openOriginal" class="btn secondary">Άνοιγμα αρχικού PDF</button>
+          <button id="addTextTop" class="btn primary">+ Πρόσθετο κείμενο</button>
+          <label class="btn primary file-label">+ Φωτογραφία<input id="photoInputTop" type="file" accept="image/*" multiple /></label>
+        </div>
+      </header>
+
+      <section class="content-grid">
+        <div class="main-card">
+          <div id="tabs" class="tabs"></div>
+          <div id="content"></div>
+        </div>
+        <aside class="tools-panel">
+          <div class="tool-card">
+            <h3>Προσωπικές προσθήκες</h3>
+            <p>Πρόσθεσε κείμενο ή πραγματικές φωτογραφίες εξοπλισμού χωρίς να αλλάξει το αρχικό manual.</p>
+            <button id="addTextSide" class="btn primary full">+ Προσθήκη κειμένου</button>
+            <label class="btn secondary full file-label">+ Προσθήκη φωτογραφίας<input id="photoInputSide" type="file" accept="image/*" multiple /></label>
+          </div>
+          <div class="tool-card warning">
+            <h3>Σημαντικό</h3>
+            <p>Η εφαρμογή αποτελεί προσωπικό βοήθημα. Οι επίσημες διαδικασίες και οι οδηγίες ασφαλείας της εγκατάστασης υπερισχύουν.</p>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="textDialog">
+    <form method="dialog" id="textForm" class="dialog-form">
+      <h2>Προσθήκη πρόσθετου κειμένου</h2>
+      <label>Τίτλος<input id="noteTitle" required maxlength="100" placeholder="π.χ. Έλεγχος αντλίας P-801" /></label>
+      <label>Κείμενο<textarea id="noteBody" required rows="8" placeholder="Γράψε τις πρόσθετες πληροφορίες…"></textarea></label>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn secondary">Ακύρωση</button>
+        <button id="saveNote" value="default" class="btn primary">Αποθήκευση</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="imageDialog" class="image-dialog"><button id="closeImage" class="image-close">✕</button><img id="fullImage" alt="Μεγέθυνση" /></dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
