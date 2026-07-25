@@ -11,3 +11,18 @@ dialog{border:0;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.25);width:
 .overview-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px;align-items:start}.large-manual .manual-image{min-height:460px;object-fit:contain}.info-stack{display:flex;flex-direction:column;gap:14px}.info-box{border:1px solid var(--line);border-radius:14px;padding:16px}.info-box h3{margin:0 0 10px}.info-box p{margin:0;line-height:1.55}.info-box.purpose{background:#fff8e5}.info-box.properties{background:#eef6ff}.info-box ul{margin:0;padding-left:21px;display:flex;flex-direction:column;gap:10px;line-height:1.4}.description-block{margin-top:14px}.description-block h3{margin:0 0 6px}.description-block p{margin:0;line-height:1.55}.section-head-row{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.section-head-row p{margin-top:0;color:var(--muted);line-height:1.5}.large-photos{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}.large-photos .photo-card img{aspect-ratio:16/10}.dialog-form select,.dialog-form input[type=file]{border:1px solid #c8d3e1;border-radius:10px;padding:11px;background:#fff}.dialog-help{font-size:13px;color:var(--muted);margin:0}
 @media(max-width:1100px){.overview-layout{grid-template-columns:1fr}.info-stack{display:grid;grid-template-columns:1fr 1fr}.large-manual .manual-image{min-height:380px}}
 @media(max-width:760px){.large-manual .manual-image{min-height:0}.info-stack{display:flex}.section-head-row{display:block}.section-head-row .btn{width:100%;margin-bottom:12px}.large-photos{grid-template-columns:1fr}}
+
+
+/* V3: purpose/properties always visible beside the PDF on wide screens and directly below it on mobile */
+.manual-column{min-width:0}.info-stack{position:sticky;top:92px}.info-box{box-shadow:0 4px 14px rgba(20,42,80,.06)}.info-box.description{background:#fff}.info-kicker{font-size:10px;font-weight:800;letter-spacing:.09em;color:#667085;margin-bottom:5px}.info-box h3{font-size:18px}.info-box.properties li::marker{color:var(--blue)}
+@media(max-width:1100px){.info-stack{position:static}}
+@media(max-width:760px){
+ .overview-layout{display:flex;flex-direction:column;gap:14px}
+ .manual-column{display:flex;flex-direction:column}
+ .info-stack{display:flex;flex-direction:column;order:2;gap:12px}
+ .image-tools{order:1;margin-top:10px}
+ .info-box{padding:15px;border-width:1px}
+ .info-box h3{font-size:19px}
+ .info-box p,.info-box li{font-size:16px;line-height:1.55}
+ .info-kicker{font-size:11px}
+}
