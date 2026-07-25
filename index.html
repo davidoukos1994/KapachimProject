@@ -37,7 +37,7 @@
         <div class="top-actions">
           <button id="openOriginal" class="btn secondary">Άνοιγμα αρχικού PDF</button>
           <button id="addTextTop" class="btn primary">+ Πρόσθετο κείμενο</button>
-          <label class="btn primary file-label">+ Φωτογραφία<input id="photoInputTop" type="file" accept="image/*" multiple /></label>
+          <button id="addPhotoTop" class="btn primary">+ Προσθήκη φωτογραφίας</button>
         </div>
       </header>
 
@@ -51,7 +51,7 @@
             <h3>Προσωπικές προσθήκες</h3>
             <p>Πρόσθεσε κείμενο ή πραγματικές φωτογραφίες εξοπλισμού χωρίς να αλλάξει το αρχικό manual.</p>
             <button id="addTextSide" class="btn primary full">+ Προσθήκη κειμένου</button>
-            <label class="btn secondary full file-label">+ Προσθήκη φωτογραφίας<input id="photoInputSide" type="file" accept="image/*" multiple /></label>
+            <button id="addPhotoSide" class="btn secondary full">+ Προσθήκη φωτογραφίας</button>
           </div>
           <div class="tool-card warning">
             <h3>Σημαντικό</h3>
@@ -70,6 +70,25 @@
       <div class="dialog-actions">
         <button value="cancel" class="btn secondary">Ακύρωση</button>
         <button id="saveNote" value="default" class="btn primary">Αποθήκευση</button>
+      </div>
+    </form>
+  </dialog>
+
+
+  <dialog id="photoDialog">
+    <form method="dialog" id="photoForm" class="dialog-form">
+      <h2>Προσθήκη φωτογραφίας</h2>
+      <label>Κατηγορία
+        <select id="photoCategory" required>
+          <option value="dcs">Εικόνα από DCS</option>
+          <option value="external">Φωτογραφία εξωτερικού χώρου / εξοπλισμού</option>
+        </select>
+      </label>
+      <label>Επιλογή φωτογραφιών<input id="photoFiles" type="file" accept="image/*" multiple required /></label>
+      <p class="dialog-help">Οι φωτογραφίες αποθηκεύονται ξεχωριστά από το αρχικό PDF και εμφανίζονται στη σωστή καρτέλα.</p>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn secondary">Ακύρωση</button>
+        <button value="default" class="btn primary">Αποθήκευση φωτογραφιών</button>
       </div>
     </form>
   </dialog>
