@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1f46" />
   <title>Kapachim Custom Manual</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body>
   <div class="app-shell">
@@ -38,6 +38,8 @@
           <button id="openOriginal" class="btn secondary">Άνοιγμα αρχικού PDF</button>
           <button id="addTextTop" class="btn primary">+ Πρόσθετο κείμενο</button>
           <button id="addPhotoTop" class="btn primary">+ Προσθήκη φωτογραφίας</button>
+          <button id="addSectionTop" class="btn secondary">+ Νέος τομέας</button>
+          <button class="btn secondary edit-section-btn">✏️ Επεξεργασία</button>
         </div>
       </header>
 
@@ -52,6 +54,9 @@
             <p>Πρόσθεσε κείμενο ή πραγματικές φωτογραφίες εξοπλισμού χωρίς να αλλάξει το αρχικό manual.</p>
             <button id="addTextSide" class="btn primary full">+ Προσθήκη κειμένου</button>
             <button id="addPhotoSide" class="btn secondary full">+ Προσθήκη φωτογραφίας</button>
+            <button id="addSectionSide" class="btn primary full">+ Νέος τομέας</button>
+            <button class="btn secondary full edit-section-btn">✏️ Επεξεργασία τομέα</button>
+            <button id="resetSections" class="btn danger full">Επαναφορά αρχικών τομέων</button>
           </div>
           <div class="tool-card warning">
             <h3>Σημαντικό</h3>
@@ -93,8 +98,26 @@
     </form>
   </dialog>
 
+
+  <dialog id="sectionDialog">
+    <form method="dialog" id="sectionForm" class="dialog-form">
+      <h2 id="sectionDialogTitle">Προσθήκη νέου τομέα</h2>
+      <div class="form-row"><label>Όνομα τομέα<input id="sectionTitleInput" required maxlength="120" /></label><label class="icon-field">Εικονίδιο<input id="sectionIconInput" maxlength="3" value="▧" /></label></div>
+      <label>Περιγραφή<textarea id="sectionDescInput" rows="3"></textarea></label>
+      <label>Σκοπός<textarea id="sectionPurposeInput" rows="3"></textarea></label>
+      <label>Έξοδος / επόμενο στάδιο<textarea id="sectionOutputInput" rows="2"></textarea></label>
+      <label>Ιδιότητες — μία ανά γραμμή<textarea id="sectionPropertiesInput" rows="7" placeholder="Χαμηλό pH
+Υψηλή θερμοκρασία
+Χωρίς στερεά"></textarea></label>
+      <label>Σκοπός ανάλυσης<textarea id="sectionAnalysisInput" rows="3"></textarea></label>
+      <label>Παρατηρήσεις / πρόσθετο κείμενο<textarea id="sectionNotesInput" rows="4"></textarea></label>
+      <p class="dialog-help">Οι φωτογραφίες DCS και εξωτερικού χώρου προστίθενται μετά την αποθήκευση, από τις αντίστοιχες καρτέλες του τομέα.</p>
+      <div class="dialog-actions split"><button type="button" id="deleteSectionBtn" class="btn danger" hidden>Διαγραφή τομέα</button><span></span><button value="cancel" class="btn secondary">Ακύρωση</button><button value="default" class="btn primary">Αποθήκευση</button></div>
+    </form>
+  </dialog>
+
   <dialog id="imageDialog" class="image-dialog"><button id="closeImage" class="image-close">✕</button><img id="fullImage" alt="Μεγέθυνση" /></dialog>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
