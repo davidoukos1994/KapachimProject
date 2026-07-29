@@ -50,8 +50,8 @@ dialog{border:0;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.25);width:
 .home-mode #tabs{display:none}
 .home-mode #content{padding:0}
 .home-landing{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr);min-height:calc(100vh - 155px);background:linear-gradient(135deg,#f8fbff 0%,#eef4fb 100%)}
-.home-brand-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:54px;text-align:center;border-right:1px solid var(--line)}
-.home-logo{width:min(620px,90%);height:auto;display:block;object-fit:contain;margin-bottom:26px}
+.home-brand-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;border-right:1px solid var(--line)}
+.home-logo{width:min(760px,96%);max-height:72vh;height:auto;display:block;object-fit:contain;margin-bottom:22px;border-radius:10px}
 .home-brand-panel h2{font-size:34px;margin:0 0 12px;color:#0b1f46}
 .home-brand-panel p{max-width:690px;color:var(--muted);font-size:17px;line-height:1.65;margin:0}
 .home-quick-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:26px}
