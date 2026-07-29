@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1f46" />
   <title>Kapachim Custom Manual</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=7" />
 </head>
 <body>
   <div class="app-shell">
@@ -116,8 +116,22 @@
     </form>
   </dialog>
 
+
+  <dialog id="docDialog">
+    <form method="dialog" id="docForm" class="dialog-form">
+      <h2>Επεξεργασία εγγράφου</h2>
+      <label>Τίτλος<input id="docTitleInput" required maxlength="160" /></label>
+      <label><span id="docTextLabel">Κείμενο</span><textarea id="docTextInput" rows="16" placeholder="Γράψε ή διόρθωσε το κείμενο…"></textarea></label>
+      <p class="dialog-help">Οι αλλαγές αποθηκεύονται στην εφαρμογή. Η αρχική σελίδα του PDF παραμένει διαθέσιμη και δεν τροποποιείται.</p>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn secondary">Ακύρωση</button>
+        <button value="default" class="btn primary">Αποθήκευση αλλαγών</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="imageDialog" class="image-dialog"><button id="closeImage" class="image-close">✕</button><img id="fullImage" alt="Μεγέθυνση" /></dialog>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>
