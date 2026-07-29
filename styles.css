@@ -38,3 +38,35 @@ dialog{border:0;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.25);width:
 /* V7: editable documents and Greek voice playback */
 .doc-title-row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}.doc-title-row .section-title{margin:0}.doc-actions,.speech-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.speech-actions{margin-bottom:2px}.speech-actions .full{flex:1}.doc-editable-text{white-space:normal;background:#f8fbff;border:1px solid #cbdcf3;border-radius:14px;padding:16px;margin:12px 0;font-size:1rem;line-height:1.6}.dialog-form textarea#docTextInput{min-height:320px;font-family:inherit;line-height:1.5}
 @media(max-width:700px){.doc-actions{width:100%}.doc-actions .btn{flex:1;min-width:145px}.speech-actions{width:100%}.dialog-form textarea#docTextInput{min-height:260px}}
+
+
+/* V8: branded start screen and smoother voice playback */
+.home-mode .app-shell{grid-template-columns:1fr}
+.home-mode .sidebar{display:none}
+.home-mode .content-grid{grid-template-columns:1fr;padding:24px}
+.home-mode .tools-panel{display:none}
+.home-mode .main-card{max-width:1500px;width:100%;margin:0 auto;overflow:hidden}
+.home-mode .top-actions{display:none}
+.home-mode #tabs{display:none}
+.home-mode #content{padding:0}
+.home-landing{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr);min-height:calc(100vh - 155px);background:linear-gradient(135deg,#f8fbff 0%,#eef4fb 100%)}
+.home-brand-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:54px;text-align:center;border-right:1px solid var(--line)}
+.home-logo{width:min(620px,90%);height:auto;display:block;object-fit:contain;margin-bottom:26px}
+.home-brand-panel h2{font-size:34px;margin:0 0 12px;color:#0b1f46}
+.home-brand-panel p{max-width:690px;color:var(--muted);font-size:17px;line-height:1.65;margin:0}
+.home-quick-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:26px}
+.home-sector-panel{padding:30px 26px;background:#fff;display:flex;flex-direction:column;min-width:0}
+.home-sector-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 4px 16px;border-bottom:1px solid var(--line)}
+.home-sector-head span{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--muted)}
+.home-sector-head h3{font-size:25px;margin:4px 0 0}
+.home-menu-button{border:1px solid var(--line);border-radius:10px;padding:9px 12px;color:#0b1f46}
+.home-sector-list{display:flex;flex-direction:column;gap:8px;padding-top:16px;max-height:calc(100vh - 270px);overflow:auto;padding-right:4px}
+.home-sector-item{border:1px solid var(--line);border-radius:13px;background:#fff;padding:13px 14px;display:grid;grid-template-columns:34px 1fr 18px;gap:10px;align-items:center;text-align:left;cursor:pointer;color:var(--text)}
+.home-sector-item:hover{border-color:var(--blue);background:#f4f8ff}
+.home-sector-item>span{font-size:23px;text-align:center;color:var(--blue)}
+.home-sector-item strong{display:block;font-size:15px;margin-bottom:3px}
+.home-sector-item small{display:block;color:var(--muted);font-size:12px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-sector-item b{font-size:24px;color:var(--blue);font-weight:400}
+@media(max-width:900px){.home-landing{grid-template-columns:1fr;min-height:auto}.home-brand-panel{border-right:0;border-bottom:1px solid var(--line);padding:38px 20px}.home-logo{width:min(520px,92%)}.home-brand-panel h2{font-size:27px}.home-sector-panel{padding:22px 16px}.home-sector-list{max-height:none}.home-mode .content-grid{padding:10px}}
+@media(max-width:760px){.home-mode .topbar{display:flex}.home-brand-panel{padding:28px 15px}.home-brand-panel p{font-size:15px}.home-logo{width:94%;margin-bottom:18px}.home-sector-head h3{font-size:22px}.home-sector-item{padding:12px}.home-sector-item small{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.home-quick-actions .btn{width:100%}}
+.home-mode .sidebar.open{display:flex}

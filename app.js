@@ -49,7 +49,8 @@ function loadDocs(){
 function saveDocs(){localStorage.setItem('kapachim.docs.v7',JSON.stringify(docs))}
 let docs=loadDocs();
 
-let currentSection=sections[0], activeTab='manual', currentDoc=docs[0], editingSectionId=null;
+const homeSection={id:'home',title:'Αρχική',type:'home',icon:'⌂'};
+let currentSection=homeSection, activeTab='home', currentDoc=docs[0], editingSectionId=null;
 const $=s=>document.querySelector(s);
 const pageSrc=n=>`assets/pages/page-${String(n).padStart(2,'0')}.webp`;
 const docById=id=>docs.find(d=>d.id===id);
@@ -58,15 +59,26 @@ const editableSection=()=>!['documents','flow'].includes(currentSection.type);
 
 function buildNav(filter=''){
  const nav=$('#navList');nav.innerHTML='';let last='';
+ if(!filter){const homeBtn=document.createElement('button');homeBtn.className='nav-item'+(currentSection.id==='home'?' active':'');homeBtn.innerHTML='<span class="nav-icon">⌂</span><span>Αρχική</span>';homeBtn.onclick=()=>selectSection(homeSection);nav.append(homeBtn)}
  sections.filter(s=>(s.title+' '+(s.desc||'')+' '+(s.purpose||'')+' '+(s.properties||[]).join(' ')).toLowerCase().includes(filter.toLowerCase())).forEach(s=>{
   if(s.group!==last){const g=document.createElement('div');g.className='nav-group-title';g.textContent=s.group;nav.append(g);last=s.group}
   const b=document.createElement('button');b.className='nav-item'+(s.id===currentSection.id?' active':'');b.innerHTML=`<span class="nav-icon">${s.icon||'▧'}</span><span>${escapeHtml(s.title)}</span>`;b.onclick=()=>selectSection(s);nav.append(b)
  });
 }
-function selectSection(s){stopSpeech();currentSection=s;activeTab=s.type==='documents'?'documents':s.type==='flow'?'flow':'manual';$('#pageTitle').textContent=s.title;$('#breadcrumb').textContent=s.type==='documents'?'Βιβλιοθήκη εγγράφων':s.type==='flow'?'Εργαλεία / Ροή Μονάδας':'Τομείς / '+s.title;renderTabs();renderContent();buildNav($('#searchInput').value);updateEditButtons();closeSidebar()}
+function selectSection(s){stopSpeech();currentSection=s;activeTab=s.type==='home'?'home':s.type==='documents'?'documents':s.type==='flow'?'flow':'manual';document.body.classList.toggle('home-mode',s.type==='home');$('#pageTitle').textContent=s.type==='home'?'Προσωπικό Manual':s.title;$('#breadcrumb').textContent=s.type==='home'?'Αρχική':s.type==='documents'?'Βιβλιοθήκη εγγράφων':s.type==='flow'?'Εργαλεία / Ροή Μονάδας':'Τομείς / '+s.title;renderTabs();renderContent();buildNav($('#searchInput').value);updateEditButtons();closeSidebar()}
 function updateEditButtons(){document.querySelectorAll('.edit-section-btn').forEach(b=>b.disabled=!editableSection())}
-function renderTabs(){const t=$('#tabs');t.innerHTML='';let tabs;if(currentSection.type==='documents')tabs=[['documents','Έγγραφα & Διαδικασίες'],['additions','Πρόσθετο υλικό']];else if(currentSection.type==='flow')tabs=[['flow','Διάγραμμα Ροής']];else tabs=[['manual','Επισκόπηση'],['dcs','Εικόνες DCS'],['external','Εξωτερικός Εξοπλισμός'],['additions','Πρόσθετο υλικό']];tabs.forEach(([id,label])=>{const b=document.createElement('button');b.className='tab'+(activeTab===id?' active':'');b.textContent=label;b.onclick=()=>{activeTab=id;renderTabs();renderContent()};t.append(b)})}
-async function renderContent(){const c=$('#content');if(currentSection.type==='documents'&&activeTab==='documents')return renderDocuments(c);if(currentSection.type==='flow')return renderFlow(c);if(activeTab==='manual')return renderManual(c);if(activeTab==='dcs')return renderPhotos(c,'dcs');if(activeTab==='external')return renderPhotos(c,'external');return renderAdditions(c)}
+function renderTabs(){const t=$('#tabs');t.innerHTML='';if(currentSection.type==='home')return;let tabs;if(currentSection.type==='documents')tabs=[['documents','Έγγραφα & Διαδικασίες'],['additions','Πρόσθετο υλικό']];else if(currentSection.type==='flow')tabs=[['flow','Διάγραμμα Ροής']];else tabs=[['manual','Επισκόπηση'],['dcs','Εικόνες DCS'],['external','Εξωτερικός Εξοπλισμός'],['additions','Πρόσθετο υλικό']];tabs.forEach(([id,label])=>{const b=document.createElement('button');b.className='tab'+(activeTab===id?' active':'');b.textContent=label;b.onclick=()=>{activeTab=id;renderTabs();renderContent()};t.append(b)})}
+async function renderContent(){const c=$('#content');if(currentSection.type==='home')return renderHome(c);if(currentSection.type==='documents'&&activeTab==='documents')return renderDocuments(c);if(currentSection.type==='flow')return renderFlow(c);if(activeTab==='manual')return renderManual(c);if(activeTab==='dcs')return renderPhotos(c,'dcs');if(activeTab==='external')return renderPhotos(c,'external');return renderAdditions(c)}
+
+function renderHome(c){
+ const sectorItems=sections.filter(s=>!['documents','flow'].includes(s.type));
+ c.innerHTML=`<div class="home-landing"><section class="home-brand-panel"><img src="assets/kapachim-logo.png" alt="KapaChim Inventing Chemistry" class="home-logo"><h2>Ψηφιακό Προσωπικό Manual</h2><p>Επίλεξε έναν τομέα από το μενού για να ανοίξεις την περιγραφή, τον σκοπό, τις ιδιότητες, τις εικόνες και τα σχετικά έγγραφα.</p><div class="home-quick-actions"><button class="btn secondary home-flow">Ροή Μονάδας</button><button class="btn secondary home-docs">Έγγραφα & Διαδικασίες</button></div></section><aside class="home-sector-panel"><div class="home-sector-head"><div><span>ΤΟΜΕΙΣ</span><h3>Επίλεξε τομέα</h3></div><button class="icon-btn home-menu-button" aria-label="Άνοιγμα πλήρους μενού">☰</button></div><div class="home-sector-list">${sectorItems.map(s=>`<button class="home-sector-item" data-id="${s.id}"><span>${s.icon||'▧'}</span><div><strong>${escapeHtml(s.title)}</strong><small>${escapeHtml(s.purpose||s.desc||'')}</small></div><b>›</b></button>`).join('')}</div></aside></div>`;
+ c.querySelectorAll('.home-sector-item').forEach(b=>b.onclick=()=>selectSection(sections.find(s=>s.id===b.dataset.id)));
+ c.querySelector('.home-flow').onclick=()=>selectSection(sections.find(s=>s.id==='flow'));
+ c.querySelector('.home-docs').onclick=()=>selectSection(sections.find(s=>s.id==='documents'));
+ c.querySelector('.home-menu-button').onclick=()=>{$('#sidebar').classList.add('open');$('#backdrop').classList.add('show')};
+}
+
 function renderManual(c){
  const props=(currentSection.properties||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join('');
  const inputProps=(currentSection.inputProperties||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join('');
@@ -105,35 +117,47 @@ const dbGetNotes=s=>dbGetBySection('notes',s);const dbGetPhotos=s=>dbGetBySectio
 
 function getGreekVoice(){
  const voices=window.speechSynthesis?.getVoices?.()||[];
- return voices.find(v=>String(v.lang).toLowerCase().startsWith('el'))||null;
+ return voices.find(v=>String(v.lang).toLowerCase()==='el-gr')||voices.find(v=>String(v.lang).toLowerCase().startsWith('el'))||null;
 }
-function speakText(text){
+let speechRun=0;
+function naturalSpeechText(text){
+ return String(text||'').replace(/\bPh\b/gi,'πε χά').replace(/\bpH\b/g,'πε χά').replace(/Mg²?\+?/g,'μαγνήσιο').replace(/Ca²?\+?/g,'ασβέστιο').replace(/NaOH/g,'καυστική σόδα').replace(/NaCl/g,'χλωριούχο νάτριο').replace(/\s+/g,' ').trim();
+}
+function speakSequence(chunks){
  if(!('speechSynthesis' in window)){alert('Η αναπαραγωγή φωνής δεν υποστηρίζεται σε αυτή τη συσκευή.');return}
  stopSpeech();
- const clean=String(text||'').replace(/\s+/g,' ').trim();
- if(!clean)return;
- const utterance=new SpeechSynthesisUtterance(clean);
- utterance.lang='el-GR';utterance.rate=.92;utterance.pitch=1;
- const voice=getGreekVoice();if(voice)utterance.voice=voice;
- window.speechSynthesis.speak(utterance);
+ const run=++speechRun, voice=getGreekVoice();
+ const queue=chunks.map(naturalSpeechText).filter(Boolean);
+ const next=()=>{
+  if(run!==speechRun||!queue.length)return;
+  const utterance=new SpeechSynthesisUtterance(queue.shift());
+  utterance.lang='el-GR';utterance.rate=.86;utterance.pitch=.98;utterance.volume=1;
+  if(voice)utterance.voice=voice;
+  utterance.onend=()=>{if(run===speechRun)setTimeout(next,320)};
+  utterance.onerror=()=>{if(run===speechRun)setTimeout(next,250)};
+  window.speechSynthesis.speak(utterance);
+ };
+ next();
 }
-function stopSpeech(){if('speechSynthesis' in window)window.speechSynthesis.cancel()}
+function speakText(text){speakSequence([text])}
+function stopSpeech(){speechRun++;if('speechSynthesis' in window)window.speechSynthesis.cancel()}
 function speakSection(section){
- const parts=[`Τομέας ${section.title}.`];
- if(section.purpose)parts.push(`Σκοπός. ${section.purpose}.`);
- if(section.output)parts.push(`Έξοδος ή επόμενο στάδιο. ${section.output}.`);
- if(section.properties?.length)parts.push(`Ιδιότητες. ${section.properties.map((x,i)=>`${i+1}. ${x}`).join('. ')}.`);
- if(section.analysisPurpose)parts.push(`Σκοπός ανάλυσης. ${section.analysisPurpose}.`);
- if(section.desc)parts.push(`Περιγραφή τομέα. ${section.desc}.`);
- if(section.notes)parts.push(`Παρατηρήσεις. ${section.notes}.`);
- speakText(parts.join(' '));
+ const chunks=[`Ακούτε την περιγραφή του τομέα ${section.title}.`];
+ if(section.desc)chunks.push(`Περιγραφή τομέα. ${section.desc}`);
+ if(section.purpose)chunks.push(`Ο σκοπός του τομέα είναι ο εξής. ${section.purpose}`);
+ if(section.output)chunks.push(`Η έξοδος, ή το επόμενο στάδιο, είναι. ${section.output}`);
+ if(section.properties?.length){chunks.push('Οι βασικές ιδιότητες και τα κύρια σημεία είναι τα εξής.');section.properties.forEach((x,i)=>chunks.push(`${i+1}. ${x}`))}
+ if(section.analysisPurpose)chunks.push(`Σκοπός της ανάλυσης. ${section.analysisPurpose}`);
+ if(section.notes)chunks.push(`Παρατηρήσεις. ${section.notes}`);
+ chunks.push('Τέλος περιγραφής τομέα.');
+ speakSequence(chunks);
 }
 function speakDocument(doc){
- const parts=[doc.title+'.'];
- if(doc.steps?.length)parts.push(`Βήματα. ${doc.steps.map((x,i)=>`Βήμα ${i+1}. ${x}`).join(' ')}`);
- else if(doc.editableText)parts.push(doc.editableText);
- else parts.push('Το έγγραφο εμφανίζεται ως εικόνα από το αρχικό PDF. Μπορείς να προσθέσεις επεξεργάσιμο συνοδευτικό κείμενο για αναπαραγωγή.');
- speakText(parts.join(' '));
+ const chunks=[`Έγγραφο. ${doc.title}.`];
+ if(doc.steps?.length){chunks.push('Ακολουθούν τα βήματα της διαδικασίας.');doc.steps.forEach((x,i)=>chunks.push(`Βήμα ${i+1}. ${x}`));chunks.push('Τέλος διαδικασίας.');}
+ else if(doc.editableText){chunks.push(doc.editableText);chunks.push('Τέλος εγγράφου.');}
+ else chunks.push('Το έγγραφο εμφανίζεται ως εικόνα από το αρχικό PDF. Πρόσθεσε συνοδευτικό κείμενο ώστε να μπορεί να αναπαραχθεί με φωνή.');
+ speakSequence(chunks);
 }
 function showDocDialog(){
  $('#docTitleInput').value=currentDoc.title||'';
@@ -181,4 +205,4 @@ $('#searchInput').oninput=e=>buildNav(e.target.value);$('#openSidebar').onclick=
 $('#addTextTop').onclick=showTextDialog;$('#addTextSide').onclick=showTextDialog;$('#textForm').onsubmit=saveText;$('#addPhotoTop').onclick=()=>showPhotoDialog('external');$('#addPhotoSide').onclick=()=>showPhotoDialog('external');$('#photoForm').onsubmit=async e=>{e.preventDefault();await handlePhotos([...$('#photoFiles').files],$('#photoCategory').value)};
 $('#addSectionTop').onclick=()=>showSectionDialog();$('#addSectionSide').onclick=()=>showSectionDialog();document.querySelectorAll('.edit-section-btn').forEach(b=>b.onclick=()=>editableSection()&&showSectionDialog(currentSection));$('#sectionForm').onsubmit=saveSection;$('#docForm').onsubmit=saveDocEdit;$('#deleteSectionBtn').onclick=deleteCurrentCustomSection;$('#resetSections').onclick=resetSectionData;
 $('#closeImage').onclick=()=>$('#imageDialog').close();$('#openOriginal').onclick=()=>window.open('original-manual.pdf','_blank');
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});buildNav();selectSection(sections[0]);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});buildNav();selectSection(homeSection);
