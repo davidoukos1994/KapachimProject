@@ -30,23 +30,13 @@ function loadSections(){
 let sections=loadSections();
 function saveSections(){localStorage.setItem('kapachim.sections.v5',JSON.stringify(sections))}
 
-const baseDocs = [
+const docs = [
  {category:'Εκκινήσεις & Σταματήματα Υδροχλωρικού',id:'hcl-start-dcs',title:'Εκκίνηση Υδροχλωρικού από το DCS (από μέσα)',page:14,steps:['Ανοίγω την αντλία υδροχλωρικού P-801A/Β και την βάζω GF και τον ανεμιστήρα Κ-801Α/Β, στην P801 θέλω 1.5 έως 2 bar (PI-8602) και παροχή θέλω από 1.5 έως 2 m³/h.','Κλείνουμε manual την βάνα PIC-2005 για τον υδρογόνο και την PIC-2006 για το χλώριο για να πιάσουμε σωστές πιέσεις προς τον πύργο του υδροχλωρικού.','Αφού πιέσαμε το χλώριο κοντά στο 850 ανοίγουμε την KV8100.','Πατάς HCL UNIT START UP και φυσάει 120 δευτερόλεπτα άζωτο.','Βάζω το νερό 0.350 (FIC-8401).','Σου λέει ο απέξω να ανοίξεις την control του υδρογόνου και την ανοίγεις 35%.','Σου λέει να ανοίξεις την control του χλωρίου και την ανοίγεις στο 45%.','Σου λέει να ανοίξεις τις on/off υδρογόνου και χλωρίου.','Το πιο ασφαλές είναι όταν φτάσεις την βάνα του χλωρίου 60% και του υδρογόνου 45%, αυτός που είναι έξω να κλείσει εντελώς τον αέρα στον πύργο.']},
  {category:'Εκκινήσεις & Σταματήματα Υδροχλωρικού',id:'hcl-start-outside',title:'Εκκίνηση Υδροχλωρικού Εξωτερικά (βάζεις τη φωτιά)',page:15,steps:['Ανοίγω προς 902.','Ανοίγω το πράσινο βανάκι.','Γεμίζω τα silpot, κλείνω του υδρογόνου όταν βγάλει νερό, και τσεκάρω το demister αν γεμίζει για να κλείσω και του χλωρίου.','Εάν η πίεση στην μεριά του υδρογόνου είναι υψηλή πρέπει να εκτονώσω μέχρι να πάει 400-450 στο silpot του υδρογόνου.','Ανοίγω την κεντρική του υδρογόνου σε συνεννόηση με τον χειριστή μέσα.','Ξεπλένω τα tubes από την μεριά του υδρογόνου και του χλωρίου με περίπου 100-150 λίτρα, σε συνεννόηση με τον χειριστή, για 2 λεπτά.','Ανοίγω την παροχή στο σωληνάκι για την φωτιά και πετάω για λίγο έξω άζωτο ή υδρογόνο για να έρθει το υδρογόνο.','Ανοίγω το πορτάκι και βάζω φωτιά και τοποθετώ το μαρκούτσι μέσα.','Λες στον χειριστή να ανοίξει την control του υδρογόνου 35% και ανοίγεις σιγά σιγά το bypass.','Εφόσον έχεις υδρογόνο και βλέπεις καύση, κλείνεις τις βάνες για το μαρκούτσι και το βγάζεις από τον πύργο.','Λες στον χειριστή να ανοίξει και την control του χλωρίου 45% και ανοίγεις σιγά σιγά το bypass.','Μόλις τερματίσουν οι βάνες, ανοίγονται οι on/off σε συνεννόηση και κλείνουν τα bypass αφού ελεγχθεί η σωστή λειτουργία.','Στο τέλος κλείνεις σιγά σιγά τον αέρα και μετά την χειροκίνητη κάτω.','Βάζεις νερό προσεκτικά από την μεριά του υδρογόνου μέχρι να υπάρχει νερό σε όλη την επιφάνεια της φλόγας.']},
  {category:'Εκκινήσεις & Σταματήματα Υδροχλωρικού',id:'hcl-stop-outside',title:'Τρόπος σταματήματος υδροχλωρικού εξωτερικά',page:19,steps:['Ανοίγουμε χειροκίνητες βάνες του αέρα για να αναπνεύσει ο πύργος.','Κλείνουμε την κεντρική του Υδρογόνου.','Ξεπλένουμε με DW την φλόγα ανοίγοντας μία το υδρογόνο και μία το χλώριο.','Κλείνουμε την κεντρική του νερού DW.','Γεμίζουμε τα silpot.','Κλείνουμε την είσοδο νερού Π.Ψ στον μανδύα.','Ανοίγουμε το κενό προς 610.','Γυρνάμε προς 902.','Κλείνω την χειροκίνητη βάνα μπροστά από τις αντλίες (πράσινη βάνα).','Φυσάνε άζωτο στην γραμμή του υδρογόνου.']},
  {category:'Εκκινήσεις & Σταματήματα Υδροχλωρικού',id:'hcl-stop-dcs',title:'Τρόπος σταματήματος στο υδροχλωρικό DCS',page:20,steps:['Κάνεις όλα τα interlock disable στον πύργο εκτός από το power failure.','Αρχίζω και κλείνω την FIC-8101 και την FIC-8201 και προσέχω τις πιέσεις PIC-2006 και PIC-2005.','Κατεβάζεις από την FIC-8401 την ροή του νερού.','Ανοίγεις την PIC8300 και την βάζεις Manual στο 50%.','Όταν φτάσει 50% η βάνα του χλωρίου και 35-30% του υδρογόνου πατάμε HCL UNIT SHUTDOWN.','Βγάζω από GF την P801 και την κλείνω, και η βάνα LIC-8501 manual και βάζω στα details Out Lo 0 και Out High 100.']},
  {category:'Αναλύσεις',id:'analysis-naoh',title:'Ανάλυση NaOH & Na₂CO₃ σε διάλυμα',page:21},{category:'Αναλύσεις',id:'analysis-chlorine',title:'Ανάλυση ενεργού χλωρίνης',page:22},{category:'Αναλύσεις',id:'analysis-d201',title:'Ανάλυση D-201 / D-204 / Feed / Ανωλύτης',page:23},{category:'Αναλύσεις',id:'analysis-r201',title:'Ανάλυση R-201 (Ριακτόρας)',page:24},{category:'Αναλύσεις',id:'analysis-salt',title:'Ανάλυση αλατιού',page:25}
 ];
-
-function loadDocs(){
-  try{
-    const saved=JSON.parse(localStorage.getItem('kapachim.docs.v6')||'null');
-    if(!Array.isArray(saved)) return structuredClone(baseDocs);
-    return baseDocs.map(base=>{const edited=saved.find(x=>x.id===base.id);return edited?{...base,...edited}:base});
-  }catch{return structuredClone(baseDocs)}
-}
-function saveDocs(){localStorage.setItem('kapachim.docs.v6',JSON.stringify(docs))}
-let docs=loadDocs();
 
 let currentSection=sections[0], activeTab='manual', currentDoc=docs[0], editingSectionId=null;
 const $=s=>document.querySelector(s);
@@ -88,7 +78,7 @@ async function renderPhotos(c,category){const all=await dbGetPhotos(currentSecti
 async function renderAdditions(c){const notes=await dbGetNotes(currentSection.id);const photos=await dbGetPhotos(currentSection.id);c.innerHTML=`<h2 class="section-title">Πρόσθετο υλικό</h2><p>Το υλικό αυτό είναι ξεχωριστό από το PDF και μπορεί να διαγραφεί ή να συμπληρωθεί χωρίς να επηρεαστεί το αρχικό manual.</p><div id="notesList"></div><h3>Εικόνες DCS</h3><div class="photo-grid" id="dcsGrid"></div><h3>Εξωτερικός εξοπλισμός</h3><div class="photo-grid" id="externalGrid"></div>`;renderNotes(notes);renderPhotoGrid(photos.filter(p=>p.category==='dcs'),$('#dcsGrid'));renderPhotoGrid(photos.filter(p=>(p.category||'external')==='external'),$('#externalGrid'))}
 function renderDocuments(c){const groups=[...new Set(docs.map(d=>d.category||'Έγγραφα'))];c.innerHTML=`<div class="doc-list"><div class="doc-menu">${groups.map(g=>`<div class="doc-group-title">${escapeHtml(g)}</div>${docs.filter(d=>(d.category||'Έγγραφα')===g).map(d=>`<button class="doc-choice ${d.id===currentDoc.id?'active':''}" data-doc="${d.id}">▧ ${d.title}</button>`).join('')}`).join('')}</div><div id="docView"></div></div>`;c.querySelectorAll('.doc-choice').forEach(b=>b.onclick=()=>{currentDoc=docs.find(d=>d.id===b.dataset.doc);renderContent()});renderDocView()}
 function openRelatedDoc(id){const d=docById(id);const docSection=sections.find(s=>s.id==='documents');if(!d||!docSection)return;currentDoc=d;selectSection(docSection)}
-async function renderDocView(){const v=$('#docView');let body='';if(currentDoc.steps){body=`<div class="original-badge custom">✏️ Επεξεργάσιμο αντίγραφο — το αρχικό PDF παραμένει ανέπαφο</div><div class="steps">${currentDoc.steps.map((s,i)=>`<label class="step"><input type="checkbox"><span><strong>${i+1}.</strong> ${escapeHtml(s)}</span></label>`).join('')}</div>`}else{body=`<div class="original-badge custom">✏️ Μπορείς να προσθέσεις ή να αλλάξεις το συνοδευτικό κείμενο</div>${currentDoc.editableText?`<div class="doc-editable-text">${escapeHtml(currentDoc.editableText).replace(/\n/g,'<br>')}</div>`:''}<img class="manual-image zoomable" src="${pageSrc(currentDoc.page)}" alt="${escapeHtml(currentDoc.title)}">`}v.innerHTML=`<div class="doc-title-row"><h2 class="section-title">${escapeHtml(currentDoc.title)}</h2><button class="btn primary edit-doc">✏️ Επεξεργασία κειμένου</button></div>${body}<div class="image-tools"><button class="btn secondary show-page">Προβολή αρχικής σελίδας PDF</button><button class="btn secondary reset-doc">Επαναφορά αρχικού κειμένου</button></div><div class="additions"><h3>Πρόσθετες σημειώσεις / φωτογραφίες</h3><div id="inlineAdditions"></div></div>`;bindZoom(v);v.querySelector('.show-page').onclick=()=>openImage(pageSrc(currentDoc.page));v.querySelector('.edit-doc').onclick=showDocDialog;v.querySelector('.reset-doc').onclick=resetCurrentDoc;renderInlineAdditions(currentDoc.id)}
+async function renderDocView(){const v=$('#docView');let body='';if(currentDoc.steps){body=`<div class="original-badge">🔒 Κείμενο από το αρχικό PDF</div><div class="steps">${currentDoc.steps.map((s,i)=>`<label class="step"><input type="checkbox"><span><strong>${i+1}.</strong> ${s}</span></label>`).join('')}</div>`}else{body=`<div class="original-badge">🔒 Αυθεντικό έγγραφο ανάλυσης από το PDF</div><img class="manual-image zoomable" src="${pageSrc(currentDoc.page)}" alt="${currentDoc.title}">`}v.innerHTML=`<h2 class="section-title">${currentDoc.title}</h2>${body}<div class="image-tools"><button class="btn secondary show-page">Προβολή αρχικής σελίδας PDF</button></div><div class="additions"><h3>Πρόσθετες σημειώσεις / φωτογραφίες</h3><div id="inlineAdditions"></div></div>`;bindZoom(v);v.querySelector('.show-page').onclick=()=>openImage(pageSrc(currentDoc.page));renderInlineAdditions(currentDoc.id)}
 async function renderInlineAdditions(key=currentSection.id){const host=$('#inlineAdditions');if(!host)return;const notes=await dbGetNotes(key),photos=await dbGetPhotos(key);host.innerHTML=`<div id="notesList"></div><div class="photo-grid" id="photoGrid"></div>`;renderNotes(notes,host.querySelector('#notesList'),key);renderPhotoGrid(photos,host.querySelector('#photoGrid'),key)}
 function renderNotes(notes,host=$('#notesList')){if(!host)return;host.innerHTML=notes.length?notes.map(n=>`<article class="addition-card"><div class="addition-head"><div><h4>${escapeHtml(n.title)}</h4><p>${escapeHtml(n.body)}</p></div><button class="btn danger delete-note" data-id="${n.id}">Διαγραφή</button></div></article>`).join(''):'<div class="empty-state">Δεν έχει προστεθεί ακόμη πρόσθετο κείμενο.</div>';host.querySelectorAll('.delete-note').forEach(b=>b.onclick=async()=>{await dbDelete('notes',Number(b.dataset.id));renderContent()})}
 function renderPhotoGrid(photos,host=$('#photoGrid')){if(!host)return;host.innerHTML=photos.length?photos.map(p=>`<div class="photo-card"><img src="${p.data}" alt="Πρόσθετη φωτογραφία" data-src="${p.data}"><button class="delete-photo" data-id="${p.id}">✕</button></div>`).join(''):'<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>';host.querySelectorAll('img').forEach(i=>i.onclick=()=>openImage(i.dataset.src));host.querySelectorAll('.delete-photo').forEach(b=>b.onclick=async()=>{await dbDelete('photos',Number(b.dataset.id));renderContent()})}
@@ -101,37 +91,6 @@ const DB='kapachim-manual-db';function openDB(){return new Promise((res,rej)=>{c
 async function dbAdd(store,val){const d=await openDB();return new Promise((res,rej)=>{const t=d.transaction(store,'readwrite');t.objectStore(store).add(val);t.oncomplete=res;t.onerror=()=>rej(t.error)})}
 async function dbGetBySection(store,section){const d=await openDB();return new Promise((res,rej)=>{const r=d.transaction(store).objectStore(store).index('section').getAll(section);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
 const dbGetNotes=s=>dbGetBySection('notes',s);const dbGetPhotos=s=>dbGetBySection('photos',s);async function dbDelete(store,id){const d=await openDB();return new Promise((res,rej)=>{const t=d.transaction(store,'readwrite');t.objectStore(store).delete(id);t.oncomplete=res;t.onerror=()=>rej(t.error)})}
-
-
-function showDocDialog(){
-  $('#docTitleInput').value=currentDoc.title||'';
-  $('#docTextLabel').textContent=currentDoc.steps?'Βήματα — ένα ανά γραμμή':'Συνοδευτικό επεξεργάσιμο κείμενο';
-  $('#docTextInput').value=currentDoc.steps?(currentDoc.steps||[]).join('
-'):(currentDoc.editableText||'');
-  $('#docDialog').showModal();
-}
-function saveDocEdit(e){
-  e.preventDefault();
-  const title=$('#docTitleInput').value.trim();
-  const text=$('#docTextInput').value.trim();
-  if(!title)return;
-  currentDoc.title=title;
-  if(currentDoc.steps) currentDoc.steps=text.split('
-').map(x=>x.trim()).filter(Boolean);
-  else currentDoc.editableText=text;
-  saveDocs();
-  $('#docDialog').close();
-  renderContent();
-}
-function resetCurrentDoc(){
-  const original=baseDocs.find(d=>d.id===currentDoc.id);
-  if(!original||!confirm('Να επανέλθει το αρχικό κείμενο αυτού του εγγράφου;'))return;
-  const i=docs.findIndex(d=>d.id===currentDoc.id);
-  docs[i]=structuredClone(original);
-  currentDoc=docs[i];
-  saveDocs();
-  renderContent();
-}
 
 function showTextDialog(){$('#noteTitle').value='';$('#noteBody').value='';$('#textDialog').showModal()}
 async function saveText(e){e.preventDefault();const title=$('#noteTitle').value.trim(),body=$('#noteBody').value.trim();if(!title||!body)return;await dbAdd('notes',{section:additionKey(),title,body,createdAt:Date.now()});$('#textDialog').close();renderContent()}
@@ -155,6 +114,6 @@ function closeSidebar(){$('#sidebar').classList.remove('open');$('#backdrop').cl
 
 $('#searchInput').oninput=e=>buildNav(e.target.value);$('#openSidebar').onclick=()=>{$('#sidebar').classList.add('open');$('#backdrop').classList.add('show')};$('#closeSidebar').onclick=closeSidebar;$('#backdrop').onclick=closeSidebar;
 $('#addTextTop').onclick=showTextDialog;$('#addTextSide').onclick=showTextDialog;$('#textForm').onsubmit=saveText;$('#addPhotoTop').onclick=()=>showPhotoDialog('external');$('#addPhotoSide').onclick=()=>showPhotoDialog('external');$('#photoForm').onsubmit=async e=>{e.preventDefault();await handlePhotos([...$('#photoFiles').files],$('#photoCategory').value)};
-$('#addSectionTop').onclick=()=>showSectionDialog();$('#addSectionSide').onclick=()=>showSectionDialog();document.querySelectorAll('.edit-section-btn').forEach(b=>b.onclick=()=>editableSection()&&showSectionDialog(currentSection));$('#sectionForm').onsubmit=saveSection;$('#docForm').onsubmit=saveDocEdit;$('#deleteSectionBtn').onclick=deleteCurrentCustomSection;$('#resetSections').onclick=resetSectionData;
+$('#addSectionTop').onclick=()=>showSectionDialog();$('#addSectionSide').onclick=()=>showSectionDialog();document.querySelectorAll('.edit-section-btn').forEach(b=>b.onclick=()=>editableSection()&&showSectionDialog(currentSection));$('#sectionForm').onsubmit=saveSection;$('#deleteSectionBtn').onclick=deleteCurrentCustomSection;$('#resetSections').onclick=resetSectionData;
 $('#closeImage').onclick=()=>$('#imageDialog').close();$('#openOriginal').onclick=()=>window.open('original-manual.pdf','_blank');
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});buildNav();selectSection(sections[0]);
