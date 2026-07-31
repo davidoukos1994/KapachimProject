@@ -50,6 +50,7 @@ function saveDocs(){localStorage.setItem('kapachim.docs.v7',JSON.stringify(docs)
 let docs=loadDocs();
 
 const homeSection={id:'home',title:'Αρχική',type:'home',icon:'⌂'};
+const settingsSection={id:'settings',title:'Ρυθμίσεις Συστήματος',type:'settings',icon:'⚙'};
 let currentSection=homeSection, activeTab='home', currentDoc=docs[0], editingSectionId=null;
 const $=s=>document.querySelector(s);
 const pageSrc=n=>`assets/pages/page-${String(n).padStart(2,'0')}.webp`;
@@ -65,16 +66,23 @@ function nextManualSection(){
 
 function buildNav(filter=''){
  const nav=$('#navList');nav.innerHTML='';let last='';
- if(!filter){const homeBtn=document.createElement('button');homeBtn.className='nav-item'+(currentSection.id==='home'?' active':'');homeBtn.innerHTML='<span class="nav-icon">⌂</span><span>Αρχική</span>';homeBtn.onclick=()=>selectSection(homeSection);nav.append(homeBtn);const adminBtn=document.createElement('button');adminBtn.className='nav-item nav-admin-button';adminBtn.innerHTML='<span class="nav-icon">🔐</span><span>Διαχειριστής</span>';adminBtn.onclick=()=>window.showAdminDialog?.();nav.append(adminBtn)}
+ if(!filter){const homeBtn=document.createElement('button');homeBtn.className='nav-item'+(currentSection.id==='home'?' active':'');homeBtn.innerHTML='<span class="nav-icon">⌂</span><span>Αρχική</span>';homeBtn.onclick=()=>selectSection(homeSection);nav.append(homeBtn);const adminBtn=document.createElement('button');adminBtn.className='nav-item nav-admin-button';adminBtn.innerHTML='<span class="nav-icon">🔐</span><span>Διαχειριστής</span>';adminBtn.onclick=()=>window.showAdminDialog?.();nav.append(adminBtn);const settingsBtn=document.createElement('button');settingsBtn.className='nav-item'+(currentSection.id==='settings'?' active':'');settingsBtn.innerHTML='<span class="nav-icon">⚙</span><span>Ρυθμίσεις Συστήματος</span>';settingsBtn.onclick=()=>selectSection(settingsSection);nav.append(settingsBtn)}
  sections.filter(s=>(s.title+' '+(s.desc||'')+' '+(s.purpose||'')+' '+(s.properties||[]).join(' ')).toLowerCase().includes(filter.toLowerCase())).forEach(s=>{
   if(s.group!==last){const g=document.createElement('div');g.className='nav-group-title';g.textContent=s.group;nav.append(g);last=s.group}
   const b=document.createElement('button');b.className='nav-item'+(s.id===currentSection.id?' active':'');b.innerHTML=`<span class="nav-icon">${s.icon||'▧'}</span><span>${escapeHtml(s.title)}</span>`;b.onclick=()=>selectSection(s);nav.append(b)
  });
 }
-function selectSection(s){stopSpeech();currentSection=s;activeTab=s.type==='home'?'home':s.type==='documents'?'documents':s.type==='flow'?'flow':'manual';document.body.classList.toggle('home-mode',s.type==='home');$('#pageTitle').textContent=s.type==='home'?'Προσωπικό Manual':s.title;$('#breadcrumb').textContent=s.type==='home'?'Αρχική':s.type==='documents'?'Βιβλιοθήκη εγγράφων':s.type==='flow'?'Εργαλεία / Ροή Μονάδας':'Τομείς / '+s.title;const nextTop=$('#nextSectionTop');const next=nextManualSection();if(nextTop){nextTop.hidden=!(s.type!=='home'&&s.type!=='documents'&&s.type!=='flow'&&next);nextTop.onclick=next?()=>selectSection(next):null}renderTabs();renderContent();buildNav($('#searchInput').value);updateEditButtons();closeSidebar()}
+function selectSection(s){stopSpeech();currentSection=s;activeTab=s.type==='home'?'home':s.type==='documents'?'documents':s.type==='flow'?'flow':s.type==='settings'?'settings':'manual';document.body.classList.toggle('home-mode',s.type==='home');$('#pageTitle').textContent=s.type==='home'?'Προσωπικό Manual':s.title;$('#breadcrumb').textContent=s.type==='home'?'Αρχική':s.type==='documents'?'Βιβλιοθήκη εγγράφων':s.type==='flow'?'Εργαλεία / Ροή Μονάδας':s.type==='settings'?'Εργαλεία / Ρυθμίσεις':'Τομείς / '+s.title;const nextTop=$('#nextSectionTop');const next=nextManualSection();if(nextTop){nextTop.hidden=!(s.type!=='home'&&s.type!=='documents'&&s.type!=='flow'&&s.type!=='settings'&&next);nextTop.onclick=next?()=>selectSection(next):null}renderTabs();renderContent();buildNav($('#searchInput').value);updateEditButtons();closeSidebar()}
 function updateEditButtons(){document.querySelectorAll('.edit-section-btn').forEach(b=>{b.disabled=!editableSection()||!adminEnabled();b.hidden=!adminEnabled()})}
-function renderTabs(){const t=$('#tabs');t.innerHTML='';if(currentSection.type==='home')return;let tabs;if(currentSection.type==='documents')tabs=[['documents','Έγγραφα & Διαδικασίες'],['additions','Πρόσθετο υλικό']];else if(currentSection.type==='flow')tabs=[['flow','Διάγραμμα Ροής']];else tabs=[['manual','Επισκόπηση'],['dcs','Εικόνες DCS'],['external','Εξωτερικός Εξοπλισμός'],['additions','Πρόσθετο υλικό']];tabs.forEach(([id,label])=>{const b=document.createElement('button');b.className='tab'+(activeTab===id?' active':'');b.textContent=label;b.onclick=()=>{activeTab=id;renderTabs();renderContent()};t.append(b)})}
-async function renderContent(){const c=$('#content');if(currentSection.type==='home')return renderHome(c);if(currentSection.type==='documents'&&activeTab==='documents')return renderDocuments(c);if(currentSection.type==='flow')return renderFlow(c);if(activeTab==='manual')return renderManual(c);if(activeTab==='dcs')return renderPhotos(c,'dcs');if(activeTab==='external')return renderPhotos(c,'external');return renderAdditions(c)}
+function renderTabs(){const t=$('#tabs');t.innerHTML='';if(currentSection.type==='home'||currentSection.type==='settings')return;let tabs;if(currentSection.type==='documents')tabs=[['documents','Έγγραφα & Διαδικασίες'],['additions','Πρόσθετο υλικό']];else if(currentSection.type==='flow')tabs=[['flow','Διάγραμμα Ροής']];else tabs=[['manual','Επισκόπηση'],['dcs','Εικόνες DCS'],['external','Εξωτερικός Εξοπλισμός'],['additions','Πρόσθετο υλικό']];tabs.forEach(([id,label])=>{const b=document.createElement('button');b.className='tab'+(activeTab===id?' active':'');b.textContent=label;b.onclick=()=>{activeTab=id;renderTabs();renderContent()};t.append(b)})}
+async function renderContent(){const c=$('#content');if(currentSection.type==='home')return renderHome(c);if(currentSection.type==='settings')return renderSystemSettings(c);if(currentSection.type==='documents'&&activeTab==='documents')return renderDocuments(c);if(currentSection.type==='flow')return renderFlow(c);if(activeTab==='manual')return renderManual(c);if(activeTab==='dcs')return renderPhotos(c,'dcs');if(activeTab==='external')return renderPhotos(c,'external');return renderAdditions(c)}
+
+function renderSystemSettings(c){
+ const st=window.getSupabaseDiagnostics?.()||{};
+ const value=(v,fallback='—')=>escapeHtml(String(v??fallback));
+ c.innerHTML=`<div class="settings-page"><div class="section-head-row"><div><h2 class="section-title">Ρυθμίσεις Συστήματος</h2><p>Έλεγχος σύνδεσης, συγχρονισμού και έκδοσης εφαρμογής.</p></div><button class="btn primary run-health-check">Επανέλεγχος τώρα</button></div><div class="status-grid"><section class="status-card"><span>Internet</span><strong>${navigator.onLine?'🟢 Συνδεδεμένο':'🔴 Χωρίς σύνδεση'}</strong></section><section class="status-card"><span>Supabase API</span><strong>${value(st.apiLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Realtime</span><strong>${value(st.realtimeLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Τελευταίος συγχρονισμός</span><strong>${value(st.lastSyncLabel,'Δεν έχει γίνει')}</strong></section><section class="status-card"><span>Έκδοση εφαρμογής</span><strong>V17</strong></section><section class="status-card"><span>Έκδοση βάσης</span><strong>${value(st.schemaVersion,'Schema v1')}</strong></section></div><div class="settings-details"><h3>Διαγνωστικά</h3><dl><div><dt>Project URL</dt><dd>${value(st.projectUrl,'')}</dd></div><div><dt>Κατάσταση φόρτωσης</dt><dd>${value(st.loadState,'Αναμονή')}</dd></div><div><dt>Τελευταίο μήνυμα</dt><dd>${value(st.lastMessage,'—')}</dd></div><div><dt>Χρόνος απόκρισης</dt><dd>${value(st.latencyLabel,'—')}</dd></div></dl><p class="settings-note">Αν η ένδειξη μένει σε έλεγχο, πάτησε «Επανέλεγχος τώρα». Το όνομα του Supabase project δεν επηρεάζει τη σύνδεση· σημασία έχει το Project URL.</p></div></div>`;
+ c.querySelector('.run-health-check').onclick=async()=>{await window.runSupabaseHealthCheck?.(true);renderSystemSettings(c)};
+}
 
 function renderHome(c){
  const sectorItems=sections.filter(s=>!['documents','flow'].includes(s.type));
@@ -199,11 +207,26 @@ function speakDocument(doc){
  else chunks.push('Το έγγραφο εμφανίζεται ως εικόνα από το αρχικό PDF. Πρόσθεσε συνοδευτικό κείμενο ώστε να μπορεί να αναπαραχθεί με φωνή.');
  speakSequence(chunks);
 }
+async function importDocumentFile(){
+ const input=$('#docImportFile');const file=input.files?.[0];const message=$('#docImportMessage');
+ if(!file){message.textContent='Επίλεξε πρώτα αρχείο TXT ή DOCX.';return}
+ try{
+  let text='';const name=file.name.toLowerCase();
+  if(name.endsWith('.txt')||file.type==='text/plain'){text=await file.text()}
+  else if(name.endsWith('.docx')){
+   if(!window.mammoth)throw new Error('Δεν φορτώθηκε ο αναγνώστης Word. Δοκίμασε ξανά με Internet ή αποθήκευσε το αρχείο ως TXT.');
+   const result=await window.mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});text=result.value||'';
+  }else throw new Error('Υποστηρίζονται μόνο αρχεία TXT και DOCX.');
+  text=text.replace(/\r\n/g,'\n').trim();if(!text)throw new Error('Το αρχείο δεν περιέχει αναγνώσιμο κείμενο.');
+  const box=$('#docTextInput');box.value=box.value.trim()?`${box.value.trim()}\n${text}`:text;message.textContent=`✓ Εισήχθη το περιεχόμενο από ${file.name}. Πάτησε Αποθήκευση αλλαγών.`;
+ }catch(error){message.textContent=`Δεν έγινε εισαγωγή: ${error.message}`}
+}
+
 function showDocDialog(){
  $('#docTitleInput').value=currentDoc.title||'';
  $('#docTextLabel').textContent=currentDoc.steps?'Βήματα — ένα ανά γραμμή':'Συνοδευτικό επεξεργάσιμο κείμενο';
  $('#docTextInput').value=currentDoc.steps?(currentDoc.steps||[]).join('\n'):(currentDoc.editableText||'');
- $('#docDialog').showModal();
+ $('#docImportFile').value='';$('#docImportMessage').textContent='Υποστηρίζονται TXT και DOCX. Από τις Σημειώσεις iPhone μπορείς επίσης να κάνεις αντιγραφή και επικόλληση στο παραπάνω πλαίσιο.';$('#docDialog').showModal();
 }
 function saveDocEdit(e){
  e.preventDefault();
@@ -244,6 +267,7 @@ function closeSidebar(){$('#sidebar').classList.remove('open');$('#backdrop').cl
 $('#searchInput').oninput=e=>buildNav(e.target.value);$('#openSidebar').onclick=()=>{$('#sidebar').classList.add('open');$('#backdrop').classList.add('show')};$('#closeSidebar').onclick=closeSidebar;$('#backdrop').onclick=closeSidebar;
 $('#addTextTop').onclick=showTextDialog;$('#addTextSide').onclick=showTextDialog;$('#textForm').onsubmit=saveText;$('#addPhotoTop').onclick=()=>showPhotoDialog('external');$('#addPhotoSide').onclick=()=>showPhotoDialog('external');$('#photoForm').onsubmit=async e=>{e.preventDefault();await handlePhotos([...$('#photoFiles').files],$('#photoCategory').value)};
 $('#addSectionTop').onclick=()=>showSectionDialog();$('#addSectionSide').onclick=()=>showSectionDialog();document.querySelectorAll('.edit-section-btn').forEach(b=>b.onclick=()=>editableSection()&&showSectionDialog(currentSection));$('#sectionForm').onsubmit=saveSection;$('#docForm').onsubmit=saveDocEdit;$('#deleteSectionBtn').onclick=deleteCurrentCustomSection;$('#resetSections').onclick=resetSectionData;
+$('#importDocFileButton').onclick=importDocumentFile;$('#systemSettingsButton').onclick=()=>selectSection(settingsSection);
 $('#closeImage').onclick=()=>$('#imageDialog').close();$('#openOriginal').onclick=()=>window.open('original-manual.pdf','_blank');
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});buildNav();selectSection(homeSection);
 

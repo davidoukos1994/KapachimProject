@@ -120,3 +120,9 @@ body.admin-mode #resetSections.admin-only{display:flex!important}
   .next-section-top{font-size:.82rem;padding:7px 9px}
   .title-row{gap:7px}.title-row h1{font-size:18px;max-width:calc(100% - 140px)}
 }
+
+
+/* V17 system settings and document import */
+.settings-page{display:flex;flex-direction:column;gap:20px}.status-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.status-card{border:1px solid var(--line);border-radius:14px;background:#fff;padding:16px;display:flex;flex-direction:column;gap:8px}.status-card span{color:var(--muted);font-size:.85rem;font-weight:700}.status-card strong{font-size:1rem}.settings-details{border:1px solid var(--line);border-radius:14px;background:#f8fbff;padding:18px}.settings-details h3{margin-top:0}.settings-details dl{margin:0}.settings-details dl>div{display:grid;grid-template-columns:190px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}.settings-details dt{font-weight:800}.settings-details dd{margin:0;overflow-wrap:anywhere}.settings-note{margin:16px 0 0;color:var(--muted);line-height:1.55}.doc-import-box{border:1px dashed #adc3e3;border-radius:14px;padding:14px;background:#f8fbff;display:grid;gap:10px}.doc-import-box label{margin:0}.doc-import-box input{margin-top:7px}.doc-import-box .btn{justify-self:start}
+@media(max-width:760px){.status-grid{grid-template-columns:1fr 1fr}.settings-details dl>div{grid-template-columns:1fr;gap:4px}.doc-import-box .btn{width:100%}}
+@media(max-width:430px){.status-grid{grid-template-columns:1fr}}

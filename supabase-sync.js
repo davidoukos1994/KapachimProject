@@ -1,4 +1,4 @@
-/* KapaChim Manual V15 - Supabase online synchronization */
+/* KapaChim Manual V17 - Supabase online synchronization and diagnostics */
 const SUPABASE_URL = 'https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET = 'manual-media';
@@ -6,8 +6,13 @@ const CLOUD_STATE_ID = 'main';
 const ADMIN_PIN = '7669';
 const ADMIN_STORAGE_KEY = 'kapachim.admin.enabled.v16';
 
+const diagnostics={projectUrl:SUPABASE_URL,schemaVersion:'Schema v1',apiLabel:'Έλεγχος…',realtimeLabel:'Αναμονή',lastSyncLabel:localStorage.getItem('kapachim.lastSync.v17')||'Δεν έχει γίνει',loadState:'Εκκίνηση',lastMessage:'',latencyLabel:'—'};
+window.getSupabaseDiagnostics=()=>({...diagnostics});
+function stampSync(message){const t=new Date();diagnostics.lastSyncLabel=t.toLocaleString('el-GR');diagnostics.lastMessage=message||'Συγχρονισμένο';localStorage.setItem('kapachim.lastSync.v17',diagnostics.lastSyncLabel)}
+if(!window.supabase){diagnostics.apiLabel='🔴 Δεν φορτώθηκε η βιβλιοθήκη';diagnostics.loadState='Σφάλμα βιβλιοθήκης';document.querySelectorAll('#syncStatus,#syncStatusMobile').forEach(el=>{el.className='sync-status error'+(el.id==='syncStatusMobile'?' mobile-sync':'');el.textContent='● Σφάλμα φόρτωσης Supabase'});throw new Error('Η βιβλιοθήκη Supabase δεν φορτώθηκε.')}
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  global:{headers:{'x-client-info':'kapachim-manual-v17'}}
 });
 
 let adminMode = localStorage.getItem(ADMIN_STORAGE_KEY) === '1';
@@ -20,6 +25,7 @@ const originalSaveDocs = saveDocs;
 window.isAdminMode = () => adminMode;
 
 function setSyncStatus(mode, text) {
+  diagnostics.lastMessage=text;diagnostics.loadState=mode;
   document.querySelectorAll('#syncStatus, #syncStatusMobile').forEach(el => {
     el.className = `sync-status ${el.id === 'syncStatusMobile' ? 'mobile-sync ' : ''}${mode}`;
     el.textContent = text;
@@ -71,6 +77,19 @@ function showAdminDialog() {
   updateAdminDialog();
   document.querySelector('#adminDialog').showModal();
 }
+
+async function runSupabaseHealthCheck(showStatus=false){
+ const started=performance.now();if(showStatus)setSyncStatus('syncing','● Έλεγχος Supabase…');
+ if(!navigator.onLine){diagnostics.apiLabel='🔴 Χωρίς Internet';diagnostics.latencyLabel='—';if(showStatus)setSyncStatus('error','● Χωρίς Internet');return false}
+ try{
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),8000);
+  const response=await fetch(`${SUPABASE_URL}/rest/v1/manual_app_state?select=id&id=eq.${encodeURIComponent(CLOUD_STATE_ID)}&limit=1`,{headers:{apikey:SUPABASE_PUBLISHABLE_KEY,Authorization:`Bearer ${SUPABASE_PUBLISHABLE_KEY}`},signal:controller.signal,cache:'no-store'});clearTimeout(timer);
+  if(!response.ok)throw new Error(`HTTP ${response.status}`);await response.text();
+  diagnostics.apiLabel='🟢 Συνδεδεμένο';diagnostics.latencyLabel=`${Math.round(performance.now()-started)} ms`;diagnostics.loadState='API διαθέσιμο';
+  if(showStatus)setSyncStatus('online',adminMode?'● Online · Διαχειριστής':'● Online · Συγχρονισμένο');return true;
+ }catch(error){diagnostics.apiLabel='🔴 Αποτυχία σύνδεσης';diagnostics.latencyLabel='—';diagnostics.lastMessage=error.name==='AbortError'?'Λήξη χρόνου σύνδεσης':error.message;if(showStatus)setSyncStatus('error',navigator.onLine?'● Δεν συνδέθηκε στο Supabase':'● Χωρίς Internet');return false}
+}
+window.runSupabaseHealthCheck=runSupabaseHealthCheck;
 
 async function ensureCloudStateExists() {
   const { data, error } = await supabaseClient.from('manual_app_state').select('id').eq('id', CLOUD_STATE_ID).maybeSingle();
@@ -189,7 +208,7 @@ dbAdd = async function(store, value) {
   try {
     setSyncStatus('syncing', '● Αποθήκευση online…');
     const id = await cloudDbAdd(store, value);
-    setSyncStatus('online', '● Online · Συγχρονισμένο');
+    stampSync('Online αποθήκευση ολοκληρώθηκε');setSyncStatus('online', '● Online · Συγχρονισμένο');
     return id;
   } catch (error) {
     setSyncStatus('error', '● Σφάλμα αποθήκευσης');
@@ -215,7 +234,7 @@ dbDelete = async function(store, id) {
   try {
     setSyncStatus('syncing', '● Διαγραφή online…');
     await cloudDbDelete(store, id);
-    setSyncStatus('online', '● Online · Συγχρονισμένο');
+    stampSync('Online συγχρονισμός ολοκληρώθηκε');setSyncStatus('online', '● Online · Συγχρονισμένο');
   } catch (error) {
     setSyncStatus('error', '● Σφάλμα διαγραφής');
     alert(`Η διαγραφή δεν ολοκληρώθηκε.\n${error.message}`);
@@ -259,8 +278,11 @@ function withTimeout(promise, milliseconds = 12000) {
 async function loadCloudState({ keepSection = false } = {}) {
   if (cloudStateLoading) return;
   cloudStateLoading = true;
-  setSyncStatus('syncing', '● Φόρτωση online…');
+  setSyncStatus('syncing', '● Έλεγχος και φόρτωση online…');
+  diagnostics.loadState='Έλεγχος API';
   try {
+    const healthy=await runSupabaseHealthCheck(false);if(!healthy)throw new Error(diagnostics.lastMessage||'Δεν υπάρχει σύνδεση με Supabase');
+    diagnostics.loadState='Φόρτωση δεδομένων';
     const { data, error } = await withTimeout(supabaseClient.from('manual_app_state').select('sections,docs').eq('id', CLOUD_STATE_ID).maybeSingle());
     if (error) throw error;
     if (data) {
@@ -280,7 +302,7 @@ async function loadCloudState({ keepSection = false } = {}) {
         selectSection(homeSection);
       }
     }
-    setSyncStatus('online', adminMode ? '● Online · Διαχειριστής' : '● Online · Δημόσια προβολή');
+    diagnostics.apiLabel='🟢 Συνδεδεμένο';stampSync('Τα online δεδομένα φορτώθηκαν');setSyncStatus('online', adminMode ? '● Online · Διαχειριστής' : '● Online · Συγχρονισμένο');
   } catch (error) {
     console.error(error);
     setSyncStatus('error', navigator.onLine ? '● Δεν συνδέθηκε στο Supabase' : '● Χωρίς Internet');
@@ -303,7 +325,7 @@ function startRealtime() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_notes' }, () => renderContent())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_photos' }, () => renderContent())
     .subscribe(status => {
-      if (status === 'SUBSCRIBED') setSyncStatus('online', adminMode ? '● Online · Διαχειριστής' : '● Online · Δημόσια προβολή');
+      if(status==='SUBSCRIBED'){diagnostics.realtimeLabel='🟢 Ενεργό';setSyncStatus('online',adminMode?'● Online · Διαχειριστής':'● Online · Συγχρονισμένο')}else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){diagnostics.realtimeLabel='🟠 Μη διαθέσιμο';}
     });
 }
 
@@ -319,5 +341,6 @@ window.addEventListener('offline', () => setSyncStatus('error', '● Χωρίς 
   applyAdminMode(adminMode);
   await loadCloudState();
   startRealtime();
+  setInterval(()=>runSupabaseHealthCheck(false),60000);
   renderContent();
 })();
