@@ -1,4 +1,4 @@
-const CACHE='kapachim-v17-system-health';
+const CACHE='kapachim-v18-system-health';
 const ASSETS=['./','./index.html','./styles.css?v=17','./app.js?v=17','./supabase-sync.js?v=17','./manifest.webmanifest','./original-manual.pdf','./assets/manual-cover.jpeg'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});

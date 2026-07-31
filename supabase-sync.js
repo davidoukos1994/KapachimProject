@@ -1,4 +1,4 @@
-/* KapaChim Manual V17 - Supabase online synchronization and diagnostics */
+/* KapaChim Manual V18 - Supabase online synchronization and diagnostics */
 const SUPABASE_URL = 'https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET = 'manual-media';
@@ -6,13 +6,13 @@ const CLOUD_STATE_ID = 'main';
 const ADMIN_PIN = '7669';
 const ADMIN_STORAGE_KEY = 'kapachim.admin.enabled.v16';
 
-const diagnostics={projectUrl:SUPABASE_URL,schemaVersion:'Schema v1',apiLabel:'Έλεγχος…',realtimeLabel:'Αναμονή',lastSyncLabel:localStorage.getItem('kapachim.lastSync.v17')||'Δεν έχει γίνει',loadState:'Εκκίνηση',lastMessage:'',latencyLabel:'—'};
+const diagnostics={projectUrl:SUPABASE_URL,schemaVersion:'Schema v1',apiLabel:'Έλεγχος…',realtimeLabel:'Αναμονή',lastSyncLabel:localStorage.getItem('kapachim.lastSync.v18')||'Δεν έχει γίνει',loadState:'Εκκίνηση',lastMessage:'',latencyLabel:'—'};
 window.getSupabaseDiagnostics=()=>({...diagnostics});
-function stampSync(message){const t=new Date();diagnostics.lastSyncLabel=t.toLocaleString('el-GR');diagnostics.lastMessage=message||'Συγχρονισμένο';localStorage.setItem('kapachim.lastSync.v17',diagnostics.lastSyncLabel)}
+function stampSync(message){const t=new Date();diagnostics.lastSyncLabel=t.toLocaleString('el-GR');diagnostics.lastMessage=message||'Συγχρονισμένο';localStorage.setItem('kapachim.lastSync.v18',diagnostics.lastSyncLabel)}
 if(!window.supabase){diagnostics.apiLabel='🔴 Δεν φορτώθηκε η βιβλιοθήκη';diagnostics.loadState='Σφάλμα βιβλιοθήκης';document.querySelectorAll('#syncStatus,#syncStatusMobile').forEach(el=>{el.className='sync-status error'+(el.id==='syncStatusMobile'?' mobile-sync':'');el.textContent='● Σφάλμα φόρτωσης Supabase'});throw new Error('Η βιβλιοθήκη Supabase δεν φορτώθηκε.')}
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  global:{headers:{'x-client-info':'kapachim-manual-v17'}}
+  global:{headers:{'x-client-info':'kapachim-manual-v18'}}
 });
 
 let adminMode = localStorage.getItem(ADMIN_STORAGE_KEY) === '1';
@@ -63,11 +63,20 @@ function updateAdminDialog() {
   document.querySelector('#adminPinInput').value = '';
 }
 
+function updateAdminIndicators() {
+  const label = adminMode ? '🔓 Διαχειριστής ενεργός' : '🔐 Διαχειριστής';
+  const top = document.querySelector('#adminSettingsButton');
+  const foot = document.querySelector('#sidebarSettingsButton');
+  if (top) { top.textContent = label; top.classList.toggle('admin-active', adminMode); }
+  if (foot) { foot.textContent = label; foot.classList.toggle('admin-active', adminMode); }
+}
+
 function applyAdminMode(enabled) {
   adminMode = Boolean(enabled);
   document.body.classList.toggle('admin-mode', adminMode);
   document.querySelectorAll('.admin-only').forEach(el => { el.hidden = !adminMode; });
   updateAdminDialog();
+  updateAdminIndicators();
   window.refreshAdminVisibility?.();
 }
 
@@ -118,8 +127,11 @@ async function unlockAdmin(event) {
     localStorage.setItem(ADMIN_STORAGE_KEY, '1');
     applyAdminMode(true);
     message.className = 'auth-message success';
-    message.textContent = 'Η λειτουργία διαχειριστή ενεργοποιήθηκε σε αυτή τη συσκευή.';
+    message.textContent = '✓ Ενεργοποιήθηκε. Το ξεκλείδωτο λουκέτο δείχνει ότι είσαι διαχειριστής.';
     setSyncStatus('online', '● Online · Διαχειριστής');
+    buildNav(document.querySelector('#searchInput')?.value || '');
+    updateEditButtons?.();
+    await renderContent?.();
   } catch (error) {
     console.error(error);
     message.className = 'auth-message';
@@ -341,6 +353,8 @@ window.addEventListener('offline', () => setSyncStatus('error', '● Χωρίς 
   applyAdminMode(adminMode);
   await loadCloudState();
   startRealtime();
-  setInterval(()=>runSupabaseHealthCheck(false),60000);
+  setInterval(()=>runSupabaseHealthCheck(true),30000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)runSupabaseHealthCheck(true)});
+  window.addEventListener('focus',()=>runSupabaseHealthCheck(true));
   renderContent();
 })();
