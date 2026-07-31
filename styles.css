@@ -111,3 +111,12 @@ body.admin-mode #resetSections.admin-only{display:flex!important}
  .page-number-chip{grid-column:1/-1;text-align:center;margin:0}
  .next-page-btn{min-width:0}
 }
+
+/* V16 navigation, mobile status and compact title controls */
+.title-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.title-row h1{margin-right:auto}.next-section-top{padding:8px 12px}.mobile-sync{display:none;margin-top:7px;width:max-content}.nav-admin-button{margin-bottom:6px;border:1px solid rgba(255,255,255,.14)}
+@media(max-width:760px){
+  .home-mode .sidebar.open{display:block}
+  .mobile-sync{display:inline-flex}
+  .next-section-top{font-size:.82rem;padding:7px 9px}
+  .title-row{gap:7px}.title-row h1{font-size:18px;max-width:calc(100% - 140px)}
+}

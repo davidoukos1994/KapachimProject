@@ -4,7 +4,7 @@ const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS
 const STORAGE_BUCKET = 'manual-media';
 const CLOUD_STATE_ID = 'main';
 const ADMIN_PIN = '7669';
-const ADMIN_STORAGE_KEY = 'kapachim.admin.enabled.v15';
+const ADMIN_STORAGE_KEY = 'kapachim.admin.enabled.v16';
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
@@ -20,10 +20,10 @@ const originalSaveDocs = saveDocs;
 window.isAdminMode = () => adminMode;
 
 function setSyncStatus(mode, text) {
-  const el = document.querySelector('#syncStatus');
-  if (!el) return;
-  el.className = `sync-status ${mode}`;
-  el.textContent = text;
+  document.querySelectorAll('#syncStatus, #syncStatusMobile').forEach(el => {
+    el.className = `sync-status ${el.id === 'syncStatusMobile' ? 'mobile-sync ' : ''}${mode}`;
+    el.textContent = text;
+  });
 }
 
 function publicPhotoUrl(path) {
@@ -65,6 +65,7 @@ function applyAdminMode(enabled) {
   window.refreshAdminVisibility?.();
 }
 
+window.showAdminDialog = showAdminDialog;
 function showAdminDialog() {
   document.querySelector('#adminMessage').textContent = '';
   updateAdminDialog();
@@ -248,12 +249,19 @@ function scheduleCloudState() {
 saveSections = function() { originalSaveSections(); scheduleCloudState(); };
 saveDocs = function() { originalSaveDocs(); scheduleCloudState(); };
 
+function withTimeout(promise, milliseconds = 12000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Η σύνδεση με το Supabase καθυστέρησε υπερβολικά.')), milliseconds))
+  ]);
+}
+
 async function loadCloudState({ keepSection = false } = {}) {
   if (cloudStateLoading) return;
   cloudStateLoading = true;
   setSyncStatus('syncing', '● Φόρτωση online…');
   try {
-    const { data, error } = await supabaseClient.from('manual_app_state').select('sections,docs').eq('id', CLOUD_STATE_ID).maybeSingle();
+    const { data, error } = await withTimeout(supabaseClient.from('manual_app_state').select('sections,docs').eq('id', CLOUD_STATE_ID).maybeSingle());
     if (error) throw error;
     if (data) {
       const previousSectionId = currentSection?.id;
@@ -275,7 +283,7 @@ async function loadCloudState({ keepSection = false } = {}) {
     setSyncStatus('online', adminMode ? '● Online · Διαχειριστής' : '● Online · Δημόσια προβολή');
   } catch (error) {
     console.error(error);
-    setSyncStatus('error', '● Χρειάζεται το SQL setup μία φορά');
+    setSyncStatus('error', navigator.onLine ? '● Δεν συνδέθηκε στο Supabase' : '● Χωρίς Internet');
   } finally {
     cloudStateLoading = false;
   }
