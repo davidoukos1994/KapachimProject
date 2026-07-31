@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1f46" />
   <title>Kapachim Custom Manual</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=10" />
+  <link rel="stylesheet" href="styles.css?v=15" />
 </head>
 <body>
   <div class="app-shell">
@@ -22,7 +22,7 @@
         <span>⌕</span><input id="searchInput" type="search" placeholder="Αναζήτηση τομέα ή εξοπλισμού…" />
       </div>
       <nav id="navList" class="nav-list"></nav>
-      <div class="sidebar-foot">Τα αρχικά στοιχεία του PDF παραμένουν ανέπαφα. Οι προσθήκες αποθηκεύονται ξεχωριστά στη συσκευή.</div>
+      <div class="sidebar-foot">Τα στοιχεία προβάλλονται online σε όλους. <button id="sidebarSettingsButton" class="sidebar-admin-link">🔐 Διαχειριστής</button></div>
     </aside>
 
     <div id="backdrop" class="backdrop"></div>
@@ -35,11 +35,13 @@
           <h1 id="pageTitle">Προσωπικό Manual</h1>
         </div>
         <div class="top-actions">
+          <div id="syncStatus" class="sync-status local">● Φόρτωση online…</div>
+          <button id="adminSettingsButton" class="btn secondary">🔐 Διαχειριστής</button>
           <button id="openOriginal" class="btn secondary">Άνοιγμα αρχικού PDF</button>
-          <button id="addTextTop" class="btn primary">+ Πρόσθετο κείμενο</button>
-          <button id="addPhotoTop" class="btn primary">+ Προσθήκη φωτογραφίας</button>
-          <button id="addSectionTop" class="btn secondary">+ Νέος τομέας</button>
-          <button class="btn secondary edit-section-btn">✏️ Επεξεργασία</button>
+          <button id="addTextTop" class="admin-only btn primary" hidden>+ Πρόσθετο κείμενο</button>
+          <button id="addPhotoTop" class="admin-only btn primary" hidden>+ Προσθήκη φωτογραφίας</button>
+          <button id="addSectionTop" class="admin-only btn secondary" hidden>+ Νέος τομέας</button>
+          <button class="admin-only btn secondary edit-section-btn" hidden>✏️ Επεξεργασία</button>
         </div>
       </header>
 
@@ -52,11 +54,11 @@
           <div class="tool-card">
             <h3>Προσωπικές προσθήκες</h3>
             <p>Πρόσθεσε κείμενο ή πραγματικές φωτογραφίες εξοπλισμού χωρίς να αλλάξει το αρχικό manual.</p>
-            <button id="addTextSide" class="btn primary full">+ Προσθήκη κειμένου</button>
-            <button id="addPhotoSide" class="btn secondary full">+ Προσθήκη φωτογραφίας</button>
-            <button id="addSectionSide" class="btn primary full">+ Νέος τομέας</button>
-            <button class="btn secondary full edit-section-btn">✏️ Επεξεργασία τομέα</button>
-            <button id="resetSections" class="btn danger full">Επαναφορά αρχικών τομέων</button>
+            <button id="addTextSide" class="admin-only btn primary full" hidden>+ Προσθήκη κειμένου</button>
+            <button id="addPhotoSide" class="admin-only btn secondary full" hidden>+ Προσθήκη φωτογραφίας</button>
+            <button id="addSectionSide" class="admin-only btn primary full" hidden>+ Νέος τομέας</button>
+            <button class="admin-only btn secondary full edit-section-btn" hidden>✏️ Επεξεργασία τομέα</button>
+            <button id="resetSections" class="admin-only btn danger full" hidden>Επαναφορά αρχικών τομέων</button>
           </div>
           <div class="tool-card warning">
             <h3>Σημαντικό</h3>
@@ -130,8 +132,29 @@
     </form>
   </dialog>
 
+
+  <dialog id="adminDialog">
+    <form method="dialog" id="adminForm" class="dialog-form">
+      <h2>Λειτουργία διαχειριστή</h2>
+      <div id="adminLockedView">
+        <p class="dialog-help">Η εφαρμογή ανοίγει σε όλους μόνο για προβολή. Βάλε το PIN μόνο όταν θέλεις να κάνεις αλλαγές.</p>
+        <label>PIN διαχειριστή<input id="adminPinInput" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="••••" /></label>
+        <p class="dialog-help">Μετά την πρώτη σωστή εισαγωγή, η συγκεκριμένη συσκευή θα παραμένει σε λειτουργία διαχειριστή μέχρι να επιλέξεις «Κλείδωμα» ή να διαγράψεις τα δεδομένα του browser.</p>
+      </div>
+      <div id="adminUnlockedView" class="admin-success" hidden>✓ Η συσκευή είναι ενεργοποιημένη ως διαχειριστής.</div>
+      <div id="adminMessage" class="auth-message" aria-live="polite"></div>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn secondary">Κλείσιμο</button>
+        <button type="button" id="lockAdminButton" class="btn danger" hidden>Κλείδωμα διαχειριστή</button>
+        <button type="submit" id="unlockAdminButton" class="btn primary">Ενεργοποίηση</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="imageDialog" class="image-dialog"><button id="closeImage" class="image-close">✕</button><img id="fullImage" alt="Μεγέθυνση" /></dialog>
 
-  <script src="app.js?v=10"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js?v=15"></script>
+  <script src="supabase-sync.js?v=15"></script>
 </body>
 </html>
