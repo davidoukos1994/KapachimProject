@@ -1,15 +1,16 @@
-/* KapaChim Project v1 — Supabase sync for shared content and images */
+/* KapaChim Project v2 — κοινός συγχρονισμός Supabase */
 const SUPABASE_URL = 'https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET = 'manual-media';
 const CLOUD_STATE_ID = 'main';
+const APP_VERSION = 'v2';
 
 const diagnostics = {
   projectUrl: SUPABASE_URL,
   schemaVersion: 'Schema v2',
   apiLabel: 'Έλεγχος…',
   realtimeLabel: 'Αναμονή',
-  lastSyncLabel: localStorage.getItem('kapachim.lastSync.v20') || 'Δεν έχει γίνει',
+  lastSyncLabel: localStorage.getItem('kapachim.lastSync.v2') || 'Δεν έχει γίνει',
   loadState: 'Εκκίνηση',
   lastMessage: '',
   latencyLabel: '—'
@@ -19,7 +20,7 @@ window.getSupabaseDiagnostics = () => ({ ...diagnostics });
 function stampSync(message) {
   diagnostics.lastSyncLabel = new Date().toLocaleString('el-GR');
   diagnostics.lastMessage = message || 'Συγχρονισμένο';
-  localStorage.setItem('kapachim.lastSync.v20', diagnostics.lastSyncLabel);
+  localStorage.setItem('kapachim.lastSync.v2', diagnostics.lastSyncLabel);
 }
 
 function setSyncStatus(mode, text) {
@@ -30,6 +31,7 @@ function setSyncStatus(mode, text) {
     el.textContent = text;
   });
 }
+window.setKapachimSyncStatus = setSyncStatus;
 
 if (!window.supabase) {
   diagnostics.apiLabel = '🔴 Δεν φορτώθηκε η βιβλιοθήκη';
@@ -39,13 +41,13 @@ if (!window.supabase) {
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  global: { headers: { 'x-client-info': 'kapachim-manual-v20' } }
+  global: { headers: { 'x-client-info': 'kapachim-project-v2' } }
 });
 window.kapachimSupabase = supabaseClient;
 window.isAdminMode = () => true;
 window.showAdminDialog = () => {};
 
-function withTimeout(promise, milliseconds = 12000) {
+function withTimeout(promise, milliseconds = 15000) {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error('Η σύνδεση με το Supabase καθυστέρησε υπερβολικά.')), milliseconds))
@@ -61,10 +63,7 @@ window.runSupabaseHealthCheck = async function runSupabaseHealthCheck(updateBadg
     return false;
   }
   try {
-    const { error } = await withTimeout(
-      supabaseClient.from('manual_app_state').select('id').limit(1),
-      8000
-    );
+    const { error } = await withTimeout(supabaseClient.from('manual_app_state').select('id').limit(1), 9000);
     if (error) throw error;
     diagnostics.apiLabel = '🟢 Συνδεδεμένο';
     diagnostics.latencyLabel = `${Math.round(performance.now() - started)} ms`;
@@ -97,11 +96,18 @@ function safeFileName(name = 'photo.jpg') {
     .replace(/^-+|-+$/g, '') || 'photo.jpg';
 }
 
+let writeQueue = Promise.resolve();
+function queueWrite(task) {
+  const result = writeQueue.then(task, task);
+  writeQueue = result.catch(() => {});
+  return result;
+}
+
 async function addNote(value) {
   const { data, error } = await supabaseClient.from('manual_notes').insert({
-    section: value.section,
-    title: value.title,
-    body: value.body
+    section: String(value.section || 'general'),
+    title: String(value.title || 'Σημείωση'),
+    body: String(value.body || '')
   }).select('id').single();
   if (error) throw error;
   return data.id;
@@ -113,13 +119,19 @@ async function addPhoto(value) {
   if (!blob.size) throw new Error('Η εικόνα είναι κενή.');
 
   const filename = safeFileName(value.name || `photo-${Date.now()}.jpg`);
-  const category = value.category || 'external';
+  const category = String(value.category || 'external');
   const section = String(value.section || 'general');
-  const storagePath = `${section}/${category}/${Date.now()}-${crypto.randomUUID()}-${filename}`;
+  const randomId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+  const storagePath = `${section}/${category}/${Date.now()}-${randomId}-${filename}`;
 
-  const { error: uploadError } = await supabaseClient.storage
-    .from(STORAGE_BUCKET)
-    .upload(storagePath, blob, { contentType: blob.type || 'image/jpeg', cacheControl: '3600', upsert: false });
+  const { error: uploadError } = await withTimeout(
+    supabaseClient.storage.from(STORAGE_BUCKET).upload(storagePath, blob, {
+      contentType: blob.type || 'image/jpeg',
+      cacheControl: '3600',
+      upsert: false
+    }),
+    45000
+  );
   if (uploadError) throw uploadError;
 
   const { data, error: insertError } = await supabaseClient.from('manual_photos').insert({
@@ -131,9 +143,6 @@ async function addPhoto(value) {
 
   if (insertError) {
     await supabaseClient.storage.from(STORAGE_BUCKET).remove([storagePath]);
-    if (/created_by/i.test(insertError.message || '')) {
-      throw new Error('Η βάση έχει παλιό υποχρεωτικό πεδίο created_by. Εκτέλεσε μία φορά το αρχείο SUPABASE_SETUP.sql και ξαναδοκίμασε.');
-    }
     throw insertError;
   }
   return data.id;
@@ -183,20 +192,22 @@ async function cloudDbDelete(store, id) {
   throw new Error('Μη υποστηριζόμενος τύπος δεδομένων.');
 }
 
-// Replace IndexedDB operations with online Supabase operations.
-dbAdd = async function(store, value) {
-  setSyncStatus('syncing', '● Αποθήκευση online…');
-  try {
-    const id = await cloudDbAdd(store, value);
-    stampSync('Online αποθήκευση ολοκληρώθηκε');
-    setSyncStatus('online', '● Online · Συγχρονισμένο');
-    return id;
-  } catch (error) {
-    console.error(error);
-    setSyncStatus('error', '● Σφάλμα αποθήκευσης');
-    alert(`Η αλλαγή δεν αποθηκεύτηκε online.\n${error.message}`);
-    throw error;
-  }
+// Οι λειτουργίες της εφαρμογής γράφουν πλέον απευθείας online.
+dbAdd = function(store, value) {
+  return queueWrite(async () => {
+    setSyncStatus('syncing', store === 'photos' ? '● Ανέβασμα φωτογραφίας…' : '● Αποθήκευση online…');
+    try {
+      const id = await cloudDbAdd(store, value);
+      stampSync(store === 'photos' ? 'Η φωτογραφία αποθηκεύτηκε online' : 'Το κείμενο αποθηκεύτηκε online');
+      setSyncStatus('online', '● Online · Συγχρονισμένο');
+      return id;
+    } catch (error) {
+      console.error(error);
+      setSyncStatus('error', '● Σφάλμα αποθήκευσης');
+      alert(`Η αλλαγή δεν αποθηκεύτηκε online.\n${error.message}`);
+      throw error;
+    }
+  });
 };
 
 dbGetBySection = async function(store, section) {
@@ -211,72 +222,89 @@ dbGetBySection = async function(store, section) {
 dbGetNotes = section => dbGetBySection('notes', section);
 dbGetPhotos = section => dbGetBySection('photos', section);
 
-dbDelete = async function(store, id) {
-  setSyncStatus('syncing', '● Διαγραφή online…');
-  try {
-    await cloudDbDelete(store, id);
-    stampSync('Online διαγραφή ολοκληρώθηκε');
-    setSyncStatus('online', '● Online · Συγχρονισμένο');
-  } catch (error) {
-    console.error(error);
-    setSyncStatus('error', '● Σφάλμα διαγραφής');
-    alert(`Η διαγραφή δεν ολοκληρώθηκε.\n${error.message}`);
-    throw error;
-  }
+dbDelete = function(store, id) {
+  return queueWrite(async () => {
+    setSyncStatus('syncing', '● Διαγραφή online…');
+    try {
+      await cloudDbDelete(store, id);
+      stampSync('Η διαγραφή ολοκληρώθηκε online');
+      setSyncStatus('online', '● Online · Συγχρονισμένο');
+    } catch (error) {
+      console.error(error);
+      setSyncStatus('error', '● Σφάλμα διαγραφής');
+      alert(`Η διαγραφή δεν ολοκληρώθηκε.\n${error.message}`);
+      throw error;
+    }
+  });
 };
 
 const originalSaveSections = saveSections;
 const originalSaveDocs = saveDocs;
 let stateSaveTimer = null;
 let loadingCloudState = false;
+let stateWriteInProgress = false;
+let realtimeTimer = null;
 
 async function pushCloudState() {
   if (loadingCloudState) return;
+  stateWriteInProgress = true;
   setSyncStatus('syncing', '● Αποθήκευση online…');
   try {
-    const { error } = await supabaseClient.from('manual_app_state').upsert({
+    const { error } = await withTimeout(supabaseClient.from('manual_app_state').upsert({
       id: CLOUD_STATE_ID,
       sections,
       docs,
       updated_at: new Date().toISOString()
-    }, { onConflict: 'id' });
+    }, { onConflict: 'id' }), 15000);
     if (error) throw error;
-    stampSync('Κείμενα και τομείς αποθηκεύτηκαν online');
+    stampSync('Τομείς και έγγραφα αποθηκεύτηκαν online');
     setSyncStatus('online', '● Online · Συγχρονισμένο');
   } catch (error) {
     console.error(error);
     setSyncStatus('error', '● Η αλλαγή δεν αποθηκεύτηκε');
     alert(`Η αλλαγή δεν αποθηκεύτηκε στο Supabase.\n${error.message}`);
+    throw error;
+  } finally {
+    stateWriteInProgress = false;
   }
 }
 
 function scheduleCloudState() {
   clearTimeout(stateSaveTimer);
-  stateSaveTimer = setTimeout(pushCloudState, 350);
+  stateSaveTimer = setTimeout(() => queueWrite(pushCloudState), 450);
 }
 saveSections = function() { originalSaveSections(); scheduleCloudState(); };
 saveDocs = function() { originalSaveDocs(); scheduleCloudState(); };
+window.flushKapachimSync = () => queueWrite(pushCloudState);
 
 async function loadCloudState({ keepSection = false } = {}) {
-  if (loadingCloudState) return;
+  if (loadingCloudState || stateWriteInProgress) return;
   loadingCloudState = true;
   setSyncStatus('syncing', '● Φόρτωση online…');
   try {
     if (!(await window.runSupabaseHealthCheck(false))) throw new Error(diagnostics.lastMessage || 'Δεν υπάρχει σύνδεση με Supabase.');
     const { data, error } = await withTimeout(
-      supabaseClient.from('manual_app_state').select('sections,docs').eq('id', CLOUD_STATE_ID).maybeSingle()
+      supabaseClient.from('manual_app_state').select('sections,docs,updated_at').eq('id', CLOUD_STATE_ID).maybeSingle(),
+      12000
     );
     if (error) throw error;
 
     const previousSectionId = currentSection?.id;
     const previousDocId = currentDoc?.id;
-    if (data?.sections?.length) sections = data.sections;
-    if (data?.docs?.length) docs = data.docs;
-    currentDoc = docs.find(doc => doc.id === previousDocId) || docs[0];
-    originalSaveSections();
-    originalSaveDocs();
-    buildNav(document.querySelector('#searchInput')?.value || '');
+    const cloudHasContent = Boolean(data?.sections?.length || data?.docs?.length);
 
+    if (cloudHasContent) {
+      if (data.sections?.length) sections = data.sections;
+      if (data.docs?.length) docs = data.docs;
+      currentDoc = docs.find(doc => doc.id === previousDocId) || docs[0];
+      originalSaveSections();
+      originalSaveDocs();
+    } else {
+      // Πρώτη εκκίνηση: ανεβάζει στο Supabase το έτοιμο περιεχόμενο της εφαρμογής.
+      await pushCloudState();
+    }
+
+    buildNav(document.querySelector('#searchInput')?.value || '');
     if (keepSection && previousSectionId) {
       selectSection(sections.find(section => section.id === previousSectionId) || homeSection);
     } else {
@@ -291,15 +319,16 @@ async function loadCloudState({ keepSection = false } = {}) {
     loadingCloudState = false;
   }
 }
+window.reloadKapachimCloudState = loadCloudState;
 
-let realtimeTimer = null;
 function scheduleRealtimeRefresh() {
+  if (stateWriteInProgress) return;
   clearTimeout(realtimeTimer);
-  realtimeTimer = setTimeout(() => loadCloudState({ keepSection: true }), 500);
+  realtimeTimer = setTimeout(() => loadCloudState({ keepSection: true }), 700);
 }
 
 function startRealtime() {
-  supabaseClient.channel('kapachim-project-v1-live')
+  supabaseClient.channel('kapachim-project-v2-live')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_app_state' }, scheduleRealtimeRefresh)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_notes' }, () => renderContent())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_photos' }, () => renderContent())
@@ -311,12 +340,18 @@ function startRealtime() {
 
 window.addEventListener('online', () => loadCloudState({ keepSection: true }));
 window.addEventListener('offline', () => setSyncStatus('error', '● Χωρίς Internet'));
+window.addEventListener('beforeunload', () => { if (stateSaveTimer) pushCloudState(); });
 
 (async () => {
   await loadCloudState();
   startRealtime();
   setInterval(() => window.runSupabaseHealthCheck(true), 30000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) window.runSupabaseHealthCheck(true); });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      window.runSupabaseHealthCheck(true);
+      loadCloudState({ keepSection: true });
+    }
+  });
   window.addEventListener('focus', () => window.runSupabaseHealthCheck(true));
   renderContent();
 })();

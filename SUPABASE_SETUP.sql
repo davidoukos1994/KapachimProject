@@ -1,5 +1,5 @@
 -- ================================================================
--- KapaChim Project v1 — ΕΝΙΑΙΟ SUPABASE SETUP
+-- KapaChim Project v2 — ΕΝΙΑΙΟ SUPABASE SETUP
 -- Εκτέλεσέ το ΜΙΑ ΦΟΡΑ στο Supabase SQL Editor.
 -- Το script είναι idempotent: μπορεί να εκτελεστεί ξανά χωρίς να
 -- διαγράψει υπάρχοντες τομείς, έγγραφα, σημειώσεις ή φωτογραφίες.
@@ -196,4 +196,4 @@ insert into public.manual_app_state (id, sections, docs)
 values ('main', '[]'::jsonb, '[]'::jsonb)
 on conflict (id) do nothing;
 
-select 'KapaChim Project v1 Supabase setup ολοκληρώθηκε επιτυχώς.' as result;
+select 'KapaChim Project v2 Supabase setup ολοκληρώθηκε επιτυχώς.' as result;
