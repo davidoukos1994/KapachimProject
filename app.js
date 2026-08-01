@@ -175,15 +175,19 @@ async function renderStepPhotos(docId,stepIndex){
  host.querySelectorAll('.step-photo-open').forEach((b,i)=>b.onclick=()=>openImage(photos[i].data));
  host.querySelectorAll('.step-photo-delete').forEach(b=>b.onclick=async event=>{
   event.preventDefault();
-  event.stopPropagation();
+  event.stopImmediatePropagation();
   if(!confirm('Να διαγραφεί η φωτογραφία αυτού του βήματος;'))return;
   const id=b.dataset.id;
+  const card=b.closest('.step-photo-thumb');
   b.disabled=true;
   b.textContent='…';
+  card?.classList.add('deleting');
   try{
     await dbDelete('photos',id);
-    await renderStepPhotos(docId,stepIndex);
+    card?.remove();
+    if(!host.querySelector('.step-photo-thumb')) host.innerHTML='<span class="step-photo-empty">Δεν έχει προστεθεί φωτογραφία σε αυτό το βήμα.</span>';
   }catch(error){
+    card?.classList.remove('deleting');
     b.disabled=false;
     b.textContent='×';
   }
@@ -191,7 +195,7 @@ async function renderStepPhotos(docId,stepIndex){
 }
 async function renderInlineAdditions(key=currentSection.id){const host=$('#inlineAdditions');if(!host)return;const notes=await dbGetNotes(key),photos=await dbGetPhotos(key);const observations=currentSection.type!=='documents'&&currentSection.notes?`<section class="info-box description observations-before-photos"><h3>Παρατηρήσεις</h3><p>${escapeHtml(currentSection.notes)}</p></section>`:'';host.innerHTML=`${observations}<div id="notesList"></div><div class="photo-grid" id="photoGrid"></div>`;renderNotes(notes,host.querySelector('#notesList'),key);renderPhotoGrid(photos,host.querySelector('#photoGrid'),key)}
 function renderNotes(notes,host=$('#notesList')){if(!host)return;host.innerHTML=notes.length?notes.map(n=>`<article class="addition-card"><div class="addition-head"><div><h4>${escapeHtml(n.title)}</h4><p>${escapeHtml(n.body)}</p></div>${adminEnabled()?`<button class="btn danger delete-note" data-id="${n.id}">Διαγραφή</button>`:''}</div></article>`).join(''):'<div class="empty-state">Δεν έχει προστεθεί ακόμη πρόσθετο κείμενο.</div>';host.querySelectorAll('.delete-note').forEach(b=>b.onclick=async()=>{await dbDelete('notes',b.dataset.id);renderContent()})}
-function renderPhotoGrid(photos,host=$('#photoGrid')){if(!host)return;host.innerHTML=photos.length?photos.map(p=>`<div class="photo-card"><img src="${p.data}" alt="Πρόσθετη φωτογραφία" data-src="${p.data}">${adminEnabled()?`<button class="delete-photo" data-id="${p.id}">✕</button>`:''}</div>`).join(''):'<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>';host.querySelectorAll('img').forEach(i=>i.onclick=()=>openImage(i.dataset.src));host.querySelectorAll('.delete-photo').forEach(b=>b.onclick=async event=>{event.preventDefault();event.stopPropagation();if(!confirm('Να διαγραφεί αυτή η φωτογραφία;'))return;const id=b.dataset.id;b.disabled=true;b.textContent='…';try{await dbDelete('photos',id);await renderContent()}catch(error){b.disabled=false;b.textContent='✕'}})}
+function renderPhotoGrid(photos,host=$('#photoGrid')){if(!host)return;host.innerHTML=photos.length?photos.map(p=>`<div class="photo-card"><img src="${p.data}" alt="Πρόσθετη φωτογραφία" data-src="${p.data}">${adminEnabled()?`<button type="button" class="delete-photo" data-id="${p.id}">✕</button>`:''}</div>`).join(''):'<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>';host.querySelectorAll('img').forEach(i=>i.onclick=()=>openImage(i.dataset.src));host.querySelectorAll('.delete-photo').forEach(b=>b.onclick=async event=>{event.preventDefault();event.stopImmediatePropagation();if(!confirm('Να διαγραφεί αυτή η φωτογραφία;'))return;const id=b.dataset.id;const card=b.closest('.photo-card');b.disabled=true;b.textContent='…';card?.classList.add('deleting');try{await dbDelete('photos',id);card?.remove();if(!host.querySelector('.photo-card'))host.innerHTML='<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>'}catch(error){card?.classList.remove('deleting');b.disabled=false;b.textContent='✕'}})}
 function bindZoom(root){root.querySelectorAll('.zoomable').forEach(i=>i.onclick=()=>openImage(i.src));root.querySelectorAll('.zoom-btn').forEach(b=>b.onclick=()=>openImage(root.querySelector('.manual-image').src))}
 function openImage(src){$('#fullImage').src=src;$('#imageDialog').showModal()}
 function escapeHtml(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}

@@ -3,7 +3,7 @@ const SUPABASE_URL = 'https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET = 'manual-media';
 const CLOUD_STATE_ID = 'main';
-const APP_VERSION = 'v3.1';
+const APP_VERSION = 'v3.3';
 
 const diagnostics = {
   projectUrl: SUPABASE_URL,
@@ -208,29 +208,35 @@ async function cloudDbDelete(store, id) {
     return;
   }
   if (store === 'photos') {
-    // Πρώτα αφαιρούμε την εγγραφή από τη βάση ώστε η φωτογραφία να εξαφανίζεται
-    // αμέσως από όλες τις συσκευές. Η διαγραφή του αρχείου Storage γίνεται μετά
-    // και είναι best-effort, για να μην μπλοκάρει η διαγραφή από παλιό policy/cache.
-    const { data, error: fetchError } = await supabaseClient
-      .from('manual_photos')
-      .select('storage_path')
-      .eq('id', String(id))
-      .maybeSingle();
-    if (fetchError) throw fetchError;
+    const photoId = String(id || '').trim();
+    if (!photoId) throw new Error('Δεν βρέθηκε το αναγνωριστικό της φωτογραφίας.');
 
-    const { error: rowDeleteError } = await supabaseClient
-      .from('manual_photos')
-      .delete()
-      .eq('id', String(id));
+    // DELETE + SELECT στην ίδια εντολή. Έτσι επιβεβαιώνουμε ότι η εγγραφή
+    // διαγράφηκε πραγματικά και δεν δεχόμαστε σιωπηλή αποτυχία από policy/cache.
+    const { data: deletedRows, error: rowDeleteError } = await withTimeout(
+      supabaseClient
+        .from('manual_photos')
+        .delete()
+        .eq('id', photoId)
+        .select('id,storage_path'),
+      20000
+    );
     if (rowDeleteError) throw rowDeleteError;
+    const deleted = Array.isArray(deletedRows) ? deletedRows[0] : deletedRows;
+    if (!deleted?.id) {
+      throw new Error('Η φωτογραφία δεν διαγράφηκε από τη βάση. Έλεγξε την πολιτική DELETE του manual_photos.');
+    }
 
-    if (data?.storage_path) {
-      const { error: storageError } = await supabaseClient.storage
-        .from(STORAGE_BUCKET)
-        .remove([data.storage_path]);
+    // Το αρχείο Storage αφαιρείται μετά. Αν αποτύχει, η φωτογραφία έχει ήδη
+    // εξαφανιστεί από την εφαρμογή και καταγράφουμε μόνο προειδοποίηση.
+    if (deleted.storage_path) {
+      const { error: storageError } = await withTimeout(
+        supabaseClient.storage.from(STORAGE_BUCKET).remove([deleted.storage_path]),
+        20000
+      );
       if (storageError) console.warn('Η εγγραφή διαγράφηκε, αλλά έμεινε ορφανό αρχείο Storage:', storageError);
     }
-    return;
+    return deleted;
   }
   throw new Error('Μη υποστηριζόμενος τύπος δεδομένων.');
 }
@@ -320,17 +326,33 @@ saveSections = function() { originalSaveSections(); scheduleCloudState(); };
 saveDocs = function() { originalSaveDocs(); scheduleCloudState(); };
 window.flushKapachimSync = () => queueWrite(pushCloudState);
 
+async function queryCloudStateWithRetry(attempts = 5) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const result = await withTimeout(
+        supabaseClient.from('manual_app_state').select('sections,docs,updated_at').eq('id', CLOUD_STATE_ID).maybeSingle(),
+        15000
+      );
+      if (result.error) throw result.error;
+      return result.data;
+    } catch (error) {
+      lastError = error;
+      diagnostics.lastMessage = `Προσπάθεια σύνδεσης ${attempt}/${attempts}: ${error.message}`;
+      if (attempt < attempts) await new Promise(resolve => setTimeout(resolve, Math.min(5000, 900 * attempt)));
+    }
+  }
+  throw lastError || new Error('Δεν ολοκληρώθηκε η σύνδεση με το Supabase.');
+}
+
 async function loadCloudState({ keepSection = false } = {}) {
   if (loadingCloudState || stateWriteInProgress) return;
   loadingCloudState = true;
   setSyncStatus('syncing', '● Φόρτωση online…');
   try {
-    if (!(await window.runSupabaseHealthCheck(false))) throw new Error(diagnostics.lastMessage || 'Δεν υπάρχει σύνδεση με Supabase.');
-    const { data, error } = await withTimeout(
-      supabaseClient.from('manual_app_state').select('sections,docs,updated_at').eq('id', CLOUD_STATE_ID).maybeSingle(),
-      12000
-    );
-    if (error) throw error;
+    const data = await queryCloudStateWithRetry(5);
+    diagnostics.apiLabel = '🟢 Συνδεδεμένο';
+    diagnostics.latencyLabel = diagnostics.latencyLabel === '—' ? 'OK' : diagnostics.latencyLabel;
 
     const previousSectionId = currentSection?.id;
     const previousDocId = currentDoc?.id;
@@ -392,17 +414,34 @@ function clearReconnectTimer() {
 
 async function automaticConnect({ reload = true, keepSection = true } = {}) {
   clearReconnectTimer();
-  const ok = await window.runSupabaseHealthCheck(true);
-  if (ok) {
-    reconnectAttempt = 0;
-    if (reload) await loadCloudState({ keepSection });
-    return true;
+  if (!navigator.onLine) {
+    setSyncStatus('error', '● Χωρίς Internet');
+    return false;
   }
-  reconnectAttempt += 1;
-  const delay = Math.min(30000, 3000 * Math.pow(1.55, reconnectAttempt - 1));
-  diagnostics.lastMessage = `Αυτόματη νέα προσπάθεια σε ${Math.ceil(delay / 1000)} δευτερόλεπτα.`;
-  reconnectTimer = setTimeout(() => automaticConnect({ reload: true, keepSection: true }), delay);
-  return false;
+  try {
+    if (reload) {
+      await loadCloudState({ keepSection });
+    } else {
+      const { error } = await withTimeout(
+        supabaseClient.from('manual_app_state').select('id').eq('id', CLOUD_STATE_ID).limit(1),
+        12000
+      );
+      if (error) throw error;
+      diagnostics.apiLabel = '🟢 Συνδεδεμένο';
+      setSyncStatus('online', '● Online · Συγχρονισμένο');
+    }
+    reconnectAttempt = 0;
+    return true;
+  } catch (error) {
+    console.warn('Automatic Supabase connection failed:', error);
+    reconnectAttempt += 1;
+    const delay = Math.min(20000, 1500 * Math.pow(1.45, reconnectAttempt - 1));
+    diagnostics.apiLabel = '🟠 Επανασύνδεση';
+    diagnostics.lastMessage = `Αυτόματη νέα προσπάθεια σε ${Math.ceil(delay / 1000)} δευτερόλεπτα.`;
+    setSyncStatus('syncing', '● Επανασύνδεση αυτόματα…');
+    reconnectTimer = setTimeout(() => automaticConnect({ reload: true, keepSection: true }), delay);
+    return false;
+  }
 }
 window.automaticKapachimConnect = automaticConnect;
 
@@ -416,9 +455,9 @@ window.addEventListener('pageshow', () => automaticConnect({ reload: true, keepS
 
 (async () => {
   // Ο έλεγχος ξεκινά αυτόματα και επαναλαμβάνεται μέχρι να ολοκληρωθεί.
-  await automaticConnect({ reload: true, keepSection: false });
   startRealtime();
-  periodicTimer = setInterval(() => automaticConnect({ reload: false, keepSection: true }), 25000);
+  await automaticConnect({ reload: true, keepSection: false });
+  periodicTimer = setInterval(() => automaticConnect({ reload: false, keepSection: true }), 12000);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) automaticConnect({ reload: true, keepSection: true });
   });

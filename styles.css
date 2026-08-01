@@ -156,3 +156,5 @@ dialog{border:0;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.25);width:
 @media (max-width:760px){
   .observations-before-photos{margin:1rem 0 .75rem}
 }
+
+.step-photo-delete,.delete-photo{z-index:10;pointer-events:auto;touch-action:manipulation}.step-photo-thumb.deleting,.photo-card.deleting{opacity:.45;pointer-events:none}
