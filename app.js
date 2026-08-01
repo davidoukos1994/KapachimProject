@@ -64,6 +64,11 @@ function nextManualSection(){
  const i=candidates.findIndex(x=>x.id===currentSection.id);
  return i>=0&&i<candidates.length-1?candidates[i+1]:null;
 }
+function previousManualSection(){
+ const candidates=sections.filter(x=>Number.isFinite(Number(x.page))&&!['documents','flow','home'].includes(x.type));
+ const i=candidates.findIndex(x=>x.id===currentSection.id);
+ return i>0?candidates[i-1]:null;
+}
 
 function buildNav(filter=''){
  const nav=$('#navList');nav.innerHTML='';let last='';
@@ -81,7 +86,7 @@ async function renderContent(){const c=$('#content');if(currentSection.type==='h
 function renderSystemSettings(c){
  const st=window.getSupabaseDiagnostics?.()||{};
  const value=(v,fallback='—')=>escapeHtml(String(v??fallback));
- c.innerHTML=`<div class="settings-page"><div class="section-head-row"><div><h2 class="section-title">Ρυθμίσεις Συστήματος</h2><p>Έλεγχος σύνδεσης, συγχρονισμού και έκδοσης εφαρμογής.</p></div><button class="btn primary run-health-check">Επανέλεγχος τώρα</button></div><div class="status-grid"><section class="status-card"><span>Internet</span><strong>${navigator.onLine?'🟢 Συνδεδεμένο':'🔴 Χωρίς σύνδεση'}</strong></section><section class="status-card"><span>Supabase API</span><strong>${value(st.apiLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Realtime</span><strong>${value(st.realtimeLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Τελευταίος συγχρονισμός</span><strong>${value(st.lastSyncLabel,'Δεν έχει γίνει')}</strong></section><section class="status-card"><span>Έκδοση εφαρμογής</span><strong>v1</strong></section><section class="status-card"><span>Έκδοση βάσης</span><strong>${value(st.schemaVersion,'Schema v1')}</strong></section></div><div class="settings-details"><h3>Διαγνωστικά</h3><dl><div><dt>Project URL</dt><dd>${value(st.projectUrl,'')}</dd></div><div><dt>Κατάσταση φόρτωσης</dt><dd>${value(st.loadState,'Αναμονή')}</dd></div><div><dt>Τελευταίο μήνυμα</dt><dd>${value(st.lastMessage,'—')}</dd></div><div><dt>Χρόνος απόκρισης</dt><dd>${value(st.latencyLabel,'—')}</dd></div></dl><p class="settings-note">Αν η ένδειξη μένει σε έλεγχο, πάτησε «Επανέλεγχος τώρα». Το όνομα του Supabase project δεν επηρεάζει τη σύνδεση· σημασία έχει το Project URL.</p></div></div>`;
+ c.innerHTML=`<div class="settings-page"><div class="section-head-row"><div><h2 class="section-title">Ρυθμίσεις Συστήματος</h2><p>Έλεγχος σύνδεσης, συγχρονισμού και έκδοσης εφαρμογής.</p></div><button class="btn primary run-health-check">Επανέλεγχος τώρα</button></div><div class="status-grid"><section class="status-card"><span>Internet</span><strong>${navigator.onLine?'🟢 Συνδεδεμένο':'🔴 Χωρίς σύνδεση'}</strong></section><section class="status-card"><span>Supabase API</span><strong>${value(st.apiLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Realtime</span><strong>${value(st.realtimeLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Τελευταίος συγχρονισμός</span><strong>${value(st.lastSyncLabel,'Δεν έχει γίνει')}</strong></section><section class="status-card"><span>Έκδοση εφαρμογής</span><strong>v3</strong></section><section class="status-card"><span>Έκδοση βάσης</span><strong>${value(st.schemaVersion,'Schema v1')}</strong></section></div><div class="settings-details"><h3>Διαγνωστικά</h3><dl><div><dt>Project URL</dt><dd>${value(st.projectUrl,'')}</dd></div><div><dt>Κατάσταση φόρτωσης</dt><dd>${value(st.loadState,'Αναμονή')}</dd></div><div><dt>Τελευταίο μήνυμα</dt><dd>${value(st.lastMessage,'—')}</dd></div><div><dt>Χρόνος απόκρισης</dt><dd>${value(st.latencyLabel,'—')}</dd></div></dl><p class="settings-note">Αν η ένδειξη μένει σε έλεγχο, πάτησε «Επανέλεγχος τώρα». Το όνομα του Supabase project δεν επηρεάζει τη σύνδεση· σημασία έχει το Project URL.</p></div></div>`;
  c.querySelector('.run-health-check').onclick=async()=>{await window.runSupabaseHealthCheck?.(true);renderSystemSettings(c)};
 }
 
@@ -105,16 +110,35 @@ function renderManual(c){
  c.innerHTML=`<div class="hero-title"><div class="big-icon">${currentSection.icon||'▧'}</div><div><h2>${escapeHtml(currentSection.title)}</h2><p>${escapeHtml(currentSection.desc||'')}</p></div></div>
  ${hasPage?'<div class="original-badge">🔒 Αυθεντικό περιεχόμενο PDF - μόνο για προβολή</div>':builtIns.length?'<div class="original-badge custom">📷 Ενσωματωμένο βοηθητικό υλικό</div>':'<div class="original-badge custom">✏️ Προσωπικός τομέας</div>'}
  <div class="overview-layout"><div class="manual-column">${visual}</div>
- <aside class="info-stack"><div class="speech-actions"><button class="btn primary full play-section">▶ Αναπαραγωγή σελίδας</button><button class="btn secondary stop-speech">■ Διακοπή</button></div><section class="info-box purpose"><h3>Σκοπός</h3><p>${escapeHtml(currentSection.purpose||'Δεν έχει συμπληρωθεί.')}</p></section>${currentSection.output?`<section class="info-box output"><h3>Έξοδος / Επόμενο στάδιο</h3><p>${escapeHtml(currentSection.output)}</p></section>`:''}<section class="info-box properties"><h3>Ιδιότητες / Κύρια σημεία</h3>${props?`<ul>${props}</ul>`:'<p>Δεν έχουν συμπληρωθεί ιδιότητες.</p>'}</section>${currentSection.analysisPurpose?`<section class="info-box analysis"><h3>Σκοπός ανάλυσης</h3><p>${escapeHtml(currentSection.analysisPurpose)}</p></section>`:''}${related.length?`<section class="info-box analysis"><h3>Σχετικά έγγραφα / Αναλύσεις</h3><div class="related-docs">${related.map(d=>`<button class="btn secondary related-doc" data-doc="${d.id}">${escapeHtml(d.title)}</button>`).join('')}</div></section>`:''}${currentSection.byproducts?`<section class="info-box byproducts"><h3>Παραπροϊόντα</h3><p>${escapeHtml(currentSection.byproducts)}</p></section>`:''}${inputProps?`<section class="info-box inputs"><h3>Είσοδοι / Χαρακτηριστικά</h3><ul>${inputProps}</ul></section>`:''}${currentSection.notes?`<section class="info-box description"><h3>Παρατηρήσεις</h3><p>${escapeHtml(currentSection.notes)}</p></section>`:''}<section class="info-box description"><h3>Περιγραφή τομέα</h3><p>${escapeHtml(currentSection.desc||'')}</p></section><button class="btn secondary full edit-inline">✏️ Επεξεργασία τομέα</button></aside></div><div id="inlineAdditions"></div>`;
+ <aside class="info-stack"><div class="speech-actions"><button class="btn primary full play-section">▶ Αναπαραγωγή σελίδας</button><button class="btn secondary stop-speech">■ Διακοπή</button></div><section class="info-box purpose"><h3>Σκοπός</h3><p>${escapeHtml(currentSection.purpose||'Δεν έχει συμπληρωθεί.')}</p></section>${currentSection.output?`<section class="info-box output"><h3>Έξοδος / Επόμενο στάδιο</h3><p>${escapeHtml(currentSection.output)}</p></section>`:''}<section class="info-box properties"><h3>Ιδιότητες / Κύρια σημεία</h3>${props?`<ul>${props}</ul>`:'<p>Δεν έχουν συμπληρωθεί ιδιότητες.</p>'}</section>${currentSection.analysisPurpose?`<section class="info-box analysis"><h3>Σκοπός ανάλυσης</h3><p>${escapeHtml(currentSection.analysisPurpose)}</p></section>`:''}${related.length?`<section class="info-box analysis"><h3>Σχετικά έγγραφα / Αναλύσεις</h3><div class="related-docs">${related.map(d=>`<button class="btn secondary related-doc" data-doc="${d.id}">${escapeHtml(d.title)}</button>`).join('')}</div></section>`:''}${currentSection.byproducts?`<section class="info-box byproducts"><h3>Παραπροϊόντα</h3><p>${escapeHtml(currentSection.byproducts)}</p></section>`:''}${inputProps?`<section class="info-box inputs"><h3>Είσοδοι / Χαρακτηριστικά</h3><ul>${inputProps}</ul></section>`:''}<section class="info-box description"><h3>Περιγραφή τομέα</h3><p>${escapeHtml(currentSection.desc||'')}</p></section><button class="btn secondary full edit-inline">✏️ Επεξεργασία τομέα</button></aside></div><div id="inlineAdditions"></div>`;
  bindZoom(c);const editInline=c.querySelector('.edit-inline');if(editInline){editInline.hidden=false;editInline.onclick=()=>showSectionDialog(currentSection)}c.querySelector('.play-section').onclick=()=>speakSection(currentSection);c.querySelector('.stop-speech').onclick=stopSpeech;c.querySelectorAll('.related-doc').forEach(b=>b.onclick=()=>openRelatedDoc(b.dataset.doc));renderInlineAdditions();
 }
 function renderFlow(c){
- const ids=['brine-saturation','brine-treatment','brine-filtration','filtered-brine','brine-purification','pure-brine','electrolyzer','depleted-brine','dechloration','brine-saturation'];const flow=ids.map(id=>sections.find(s=>s.id===id)).filter(Boolean);
- c.innerHTML=`<h2 class="section-title">Ροή Μονάδας</h2><p class="flow-help">Πάτησε σε κάθε στάδιο για να ανοίξει ο αντίστοιχος τομέας.</p><div class="flow-list">${flow.map((s,i)=>`<button class="flow-node" data-id="${s.id}"><span>${s.icon||'▧'}</span><strong>${escapeHtml(s.title)}</strong><small>${escapeHtml(s.output||s.purpose||'')}</small></button>${i<flow.length-1?'<div class="flow-arrow">↓</div>':''}`).join('')}</div>`;
- c.querySelectorAll('.flow-node').forEach(b=>b.onclick=()=>selectSection(sections.find(s=>s.id===b.dataset.id)));
+ const ids=['brine-saturation','brine-treatment','brine-filtration','filtered-brine','brine-purification','pure-brine','electrolyzer','depleted-brine','dechloration','brine-saturation'];
+ const flow=ids.map(id=>sections.find(s=>s.id===id)).filter(Boolean);
+ const models={
+  'brine-saturation':'<span class="mini-tank"></span><span class="mini-tank"></span>',
+  'brine-treatment':'<span class="mini-reactor"></span>',
+  'brine-filtration':'<span class="mini-filter"></span><span class="mini-filter"></span>',
+  'filtered-brine':'<span class="mini-buffer"></span>',
+  'brine-purification':'<span class="mini-resin"></span><span class="mini-resin"></span>',
+  'pure-brine':'<span class="mini-pure-tank"></span>',
+  'electrolyzer':'<span class="mini-electrolyzer"><i></i><i></i><i></i></span>',
+  'depleted-brine':'<span class="mini-horizontal-tank"></span><span class="mini-reactor small"></span>',
+  'dechloration':'<span class="mini-tower"></span>'
+ };
+ const uniqueFlow=flow.slice(0,-1);
+ c.innerHTML=`<h2 class="section-title">Ροή Μονάδας</h2><p class="flow-help">Μικρή σχηματική μακέτα της πορείας της άλμης. Πάτησε σε οποιοδήποτε μηχάνημα ή στάδιο για να ανοίξει ο αντίστοιχος τομέας.</p>
+ <div class="plant-miniature" role="img" aria-label="Σχηματική μακέτα ροής της μονάδας άλμης">
+  <div class="plant-pipe main-pipe"></div>
+  ${uniqueFlow.map((s,i)=>`<button class="plant-stage stage-${i+1}" data-id="${s.id}"><span class="plant-model">${models[s.id]||'<span class="mini-buffer"></span>'}</span><strong>${escapeHtml(s.title)}</strong><small>${i+1}</small></button>${i<uniqueFlow.length-1?'<span class="plant-flow-arrow">➜</span>':''}`).join('')}
+  <div class="recycle-line"><span>Επιστροφή άλμης</span><b>↩</b></div>
+ </div>
+ <div class="flow-list compact-flow-list">${flow.map((s,i)=>`<button class="flow-node" data-id="${s.id}"><span>${s.icon||'▧'}</span><strong>${escapeHtml(s.title)}</strong><small>${escapeHtml(s.output||s.purpose||'')}</small></button>${i<flow.length-1?'<div class="flow-arrow">↓</div>':''}`).join('')}</div>`;
+ c.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>selectSection(sections.find(s=>s.id===b.dataset.id)));
 }
 async function renderPhotos(c,category){const all=await dbGetPhotos(currentSection.id);const photos=all.filter(p=>(p.category||'external')===category);const builtIns=builtInGallery(currentSection,category);const isDcs=category==='dcs';c.innerHTML=`<div class="section-head-row"><div><h2 class="section-title">${isDcs?'Εικόνες DCS':'Φωτογραφίες εξωτερικού εξοπλισμού'}</h2><p>${isDcs?'Πρόσθεσε επιπλέον οθόνες και σημεία του DCS για αυτόν τον τομέα.':'Πρόσθεσε πραγματικές φωτογραφίες από αντλίες, βάνες, δεξαμενές και άλλο εξωτερικό εξοπλισμό.'}</p></div>${adminEnabled()?`<button class="btn primary add-photo-here">+ Προσθήκη ${isDcs?'DCS':'εξωτερικής'} φωτογραφίας</button>`:''}</div>${builtIns.length?`<h3>Ενσωματωμένες φωτογραφίες</h3><div class="built-in-gallery">${builtIns.map((src,i)=>`<img class="zoomable" src="${src}" alt="${escapeHtml(currentSection.title)} ${i+1}">`).join('')}</div><h3>Δικές μου φωτογραφίες</h3>`:''}<div class="photo-grid large-photos" id="photoGrid"></div>`;renderPhotoGrid(photos,$('#photoGrid'),currentSection.id);bindZoom(c);const addPhotoHere=c.querySelector('.add-photo-here');if(addPhotoHere)addPhotoHere.onclick=()=>showPhotoDialog(category)}
-async function renderAdditions(c){const notes=await dbGetNotes(currentSection.id);const photos=await dbGetPhotos(currentSection.id);c.innerHTML=`<h2 class="section-title">Πρόσθετο υλικό</h2><p>Το υλικό αυτό είναι ξεχωριστό από το PDF και μπορεί να διαγραφεί ή να συμπληρωθεί χωρίς να επηρεαστεί το αρχικό manual.</p><div id="notesList"></div><h3>Εικόνες DCS</h3><div class="photo-grid" id="dcsGrid"></div><h3>Εξωτερικός εξοπλισμός</h3><div class="photo-grid" id="externalGrid"></div>`;renderNotes(notes);renderPhotoGrid(photos.filter(p=>p.category==='dcs'),$('#dcsGrid'));renderPhotoGrid(photos.filter(p=>(p.category||'external')==='external'),$('#externalGrid'))}
+async function renderAdditions(c){const notes=await dbGetNotes(currentSection.id);const photos=await dbGetPhotos(currentSection.id);const observations=currentSection.notes?`<section class="info-box description observations-before-photos"><h3>Παρατηρήσεις</h3><p>${escapeHtml(currentSection.notes)}</p></section>`:'';c.innerHTML=`<h2 class="section-title">Πρόσθετο υλικό</h2><p>Το υλικό αυτό είναι ξεχωριστό από το PDF και μπορεί να διαγραφεί ή να συμπληρωθεί χωρίς να επηρεαστεί το αρχικό manual.</p>${observations}<div id="notesList"></div><h3>Εικόνες DCS</h3><div class="photo-grid" id="dcsGrid"></div><h3>Εξωτερικός εξοπλισμός</h3><div class="photo-grid" id="externalGrid"></div>`;renderNotes(notes);renderPhotoGrid(photos.filter(p=>p.category==='dcs'),$('#dcsGrid'));renderPhotoGrid(photos.filter(p=>(p.category||'external')==='external'),$('#externalGrid'))}
 function renderDocuments(c){const groups=[...new Set(docs.map(d=>d.category||'Έγγραφα'))];c.innerHTML=`<div class="doc-list"><div class="doc-menu">${groups.map(g=>`<div class="doc-group-title">${escapeHtml(g)}</div>${docs.filter(d=>(d.category||'Έγγραφα')===g).map(d=>`<button class="doc-choice ${d.id===currentDoc.id?'active':''}" data-doc="${d.id}">▧ ${d.title}</button>`).join('')}`).join('')}</div><div id="docView"></div></div>`;c.querySelectorAll('.doc-choice').forEach(b=>b.onclick=()=>{currentDoc=docs.find(d=>d.id===b.dataset.doc);renderContent()});renderDocView()}
 function openRelatedDoc(id){const d=docById(id);const docSection=sections.find(s=>s.id==='documents');if(!d||!docSection)return;currentDoc=d;selectSection(docSection)}
 async function renderDocView(){
@@ -149,11 +173,25 @@ async function renderStepPhotos(docId,stepIndex){
  if(!photos.length){host.innerHTML='<span class="step-photo-empty">Δεν έχει προστεθεί φωτογραφία σε αυτό το βήμα.</span>';return}
  host.innerHTML=photos.map(p=>`<div class="step-photo-thumb"><button type="button" class="step-photo-open" aria-label="Άνοιγμα φωτογραφίας"><img src="${p.data}" alt="Φωτογραφία βήματος ${stepIndex+1}"></button>${adminEnabled()?`<button type="button" class="step-photo-delete" data-id="${p.id}" aria-label="Διαγραφή φωτογραφίας">×</button>`:''}</div>`).join('');
  host.querySelectorAll('.step-photo-open').forEach((b,i)=>b.onclick=()=>openImage(photos[i].data));
- host.querySelectorAll('.step-photo-delete').forEach(b=>b.onclick=async()=>{if(!confirm('Να διαγραφεί η φωτογραφία αυτού του βήματος;'))return;await dbDelete('photos',b.dataset.id);await renderStepPhotos(docId,stepIndex)});
+ host.querySelectorAll('.step-photo-delete').forEach(b=>b.onclick=async event=>{
+  event.preventDefault();
+  event.stopPropagation();
+  if(!confirm('Να διαγραφεί η φωτογραφία αυτού του βήματος;'))return;
+  const id=b.dataset.id;
+  b.disabled=true;
+  b.textContent='…';
+  try{
+    await dbDelete('photos',id);
+    await renderStepPhotos(docId,stepIndex);
+  }catch(error){
+    b.disabled=false;
+    b.textContent='×';
+  }
+ });
 }
-async function renderInlineAdditions(key=currentSection.id){const host=$('#inlineAdditions');if(!host)return;const notes=await dbGetNotes(key),photos=await dbGetPhotos(key);host.innerHTML=`<div id="notesList"></div><div class="photo-grid" id="photoGrid"></div>`;renderNotes(notes,host.querySelector('#notesList'),key);renderPhotoGrid(photos,host.querySelector('#photoGrid'),key)}
+async function renderInlineAdditions(key=currentSection.id){const host=$('#inlineAdditions');if(!host)return;const notes=await dbGetNotes(key),photos=await dbGetPhotos(key);const observations=currentSection.type!=='documents'&&currentSection.notes?`<section class="info-box description observations-before-photos"><h3>Παρατηρήσεις</h3><p>${escapeHtml(currentSection.notes)}</p></section>`:'';host.innerHTML=`${observations}<div id="notesList"></div><div class="photo-grid" id="photoGrid"></div>`;renderNotes(notes,host.querySelector('#notesList'),key);renderPhotoGrid(photos,host.querySelector('#photoGrid'),key)}
 function renderNotes(notes,host=$('#notesList')){if(!host)return;host.innerHTML=notes.length?notes.map(n=>`<article class="addition-card"><div class="addition-head"><div><h4>${escapeHtml(n.title)}</h4><p>${escapeHtml(n.body)}</p></div>${adminEnabled()?`<button class="btn danger delete-note" data-id="${n.id}">Διαγραφή</button>`:''}</div></article>`).join(''):'<div class="empty-state">Δεν έχει προστεθεί ακόμη πρόσθετο κείμενο.</div>';host.querySelectorAll('.delete-note').forEach(b=>b.onclick=async()=>{await dbDelete('notes',b.dataset.id);renderContent()})}
-function renderPhotoGrid(photos,host=$('#photoGrid')){if(!host)return;host.innerHTML=photos.length?photos.map(p=>`<div class="photo-card"><img src="${p.data}" alt="Πρόσθετη φωτογραφία" data-src="${p.data}">${adminEnabled()?`<button class="delete-photo" data-id="${p.id}">✕</button>`:''}</div>`).join(''):'<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>';host.querySelectorAll('img').forEach(i=>i.onclick=()=>openImage(i.dataset.src));host.querySelectorAll('.delete-photo').forEach(b=>b.onclick=async()=>{await dbDelete('photos',b.dataset.id);renderContent()})}
+function renderPhotoGrid(photos,host=$('#photoGrid')){if(!host)return;host.innerHTML=photos.length?photos.map(p=>`<div class="photo-card"><img src="${p.data}" alt="Πρόσθετη φωτογραφία" data-src="${p.data}">${adminEnabled()?`<button class="delete-photo" data-id="${p.id}">✕</button>`:''}</div>`).join(''):'<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>';host.querySelectorAll('img').forEach(i=>i.onclick=()=>openImage(i.dataset.src));host.querySelectorAll('.delete-photo').forEach(b=>b.onclick=async event=>{event.preventDefault();event.stopPropagation();if(!confirm('Να διαγραφεί αυτή η φωτογραφία;'))return;const id=b.dataset.id;b.disabled=true;b.textContent='…';try{await dbDelete('photos',id);await renderContent()}catch(error){b.disabled=false;b.textContent='✕'}})}
 function bindZoom(root){root.querySelectorAll('.zoomable').forEach(i=>i.onclick=()=>openImage(i.src));root.querySelectorAll('.zoom-btn').forEach(b=>b.onclick=()=>openImage(root.querySelector('.manual-image').src))}
 function openImage(src){$('#fullImage').src=src;$('#imageDialog').showModal()}
 function escapeHtml(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -295,6 +333,26 @@ $('#addTextTop').onclick=showTextDialog;$('#addTextSide').onclick=showTextDialog
 $('#addSectionTop').onclick=()=>showSectionDialog();$('#addSectionSide').onclick=()=>showSectionDialog();document.querySelectorAll('.edit-section-btn').forEach(b=>b.onclick=()=>editableSection()&&showSectionDialog(currentSection));$('#sectionForm').onsubmit=saveSection;$('#docForm').onsubmit=saveDocEdit;$('#deleteSectionBtn').onclick=deleteCurrentCustomSection;$('#resetSections').onclick=resetSectionData;
 $('#importDocFileButton').onclick=importDocumentFile;$('#importNoteFileButton').onclick=importNoteFile;$('#importSectionFileButton').onclick=importSectionFile;$('#systemSettingsButton').onclick=()=>selectSection(settingsSection);
 $('#closeImage').onclick=()=>$('#imageDialog').close();$('#openOriginal').onclick=()=>window.open('original-manual.pdf','_blank');
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});buildNav();selectSection(homeSection);
+function setupSectionSwipe(){
+ const surface=document.querySelector('.main-card');
+ if(!surface)return;
+ let startX=0,startY=0,startAt=0,tracking=false;
+ const interactive='button,input,textarea,select,a,label,[contenteditable="true"],dialog,.photo-grid,.built-in-gallery';
+ surface.addEventListener('touchstart',event=>{
+  if(event.touches.length!==1||event.target.closest(interactive)){tracking=false;return}
+  const t=event.touches[0];startX=t.clientX;startY=t.clientY;startAt=Date.now();tracking=true;
+ },{passive:true});
+ surface.addEventListener('touchend',event=>{
+  if(!tracking||!event.changedTouches.length){tracking=false;return}
+  tracking=false;
+  if(currentSection.type==='home'||currentSection.type==='documents'||currentSection.type==='flow'||currentSection.type==='settings')return;
+  const t=event.changedTouches[0],dx=t.clientX-startX,dy=t.clientY-startY,elapsed=Date.now()-startAt;
+  if(elapsed>900||Math.abs(dx)<75||Math.abs(dx)<Math.abs(dy)*1.3)return;
+  const destination=dx<0?nextManualSection():previousManualSection();
+  if(destination){selectSection(destination);window.scrollTo({top:0,behavior:'smooth'});}
+ },{passive:true});
+}
+
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});setupSectionSwipe();buildNav();selectSection(homeSection);
 
 window.refreshAdminVisibility=function(){buildNav(document.querySelector('#searchInput')?.value||'');updateEditButtons();renderContent();};

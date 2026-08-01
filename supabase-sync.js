@@ -1,16 +1,16 @@
-/* KapaChim Project v2 — κοινός συγχρονισμός Supabase */
+/* KapaChim Project v3 — κοινός συγχρονισμός Supabase */
 const SUPABASE_URL = 'https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET = 'manual-media';
 const CLOUD_STATE_ID = 'main';
-const APP_VERSION = 'v2';
+const APP_VERSION = 'v3.1';
 
 const diagnostics = {
   projectUrl: SUPABASE_URL,
-  schemaVersion: 'Schema v2',
+  schemaVersion: 'Schema v3',
   apiLabel: 'Έλεγχος…',
   realtimeLabel: 'Αναμονή',
-  lastSyncLabel: localStorage.getItem('kapachim.lastSync.v2') || 'Δεν έχει γίνει',
+  lastSyncLabel: localStorage.getItem('kapachim.lastSync.v3') || 'Δεν έχει γίνει',
   loadState: 'Εκκίνηση',
   lastMessage: '',
   latencyLabel: '—'
@@ -20,7 +20,7 @@ window.getSupabaseDiagnostics = () => ({ ...diagnostics });
 function stampSync(message) {
   diagnostics.lastSyncLabel = new Date().toLocaleString('el-GR');
   diagnostics.lastMessage = message || 'Συγχρονισμένο';
-  localStorage.setItem('kapachim.lastSync.v2', diagnostics.lastSyncLabel);
+  localStorage.setItem('kapachim.lastSync.v3', diagnostics.lastSyncLabel);
 }
 
 function setSyncStatus(mode, text) {
@@ -41,7 +41,7 @@ if (!window.supabase) {
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  global: { headers: { 'x-client-info': 'kapachim-project-v2' } }
+  global: { headers: { 'x-client-info': 'kapachim-project-v3' } }
 });
 window.kapachimSupabase = supabaseClient;
 window.isAdminMode = () => true;
@@ -54,26 +54,55 @@ function withTimeout(promise, milliseconds = 15000) {
   ]);
 }
 
+async function directRestHealthCheck() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 18000);
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/manual_app_state?select=id&limit=1`, {
+      method: 'GET',
+      cache: 'no-store',
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        Accept: 'application/json'
+      },
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      const message = await response.text().catch(() => '');
+      throw new Error(`Supabase HTTP ${response.status}${message ? `: ${message.slice(0,180)}` : ''}`);
+    }
+    return true;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 window.runSupabaseHealthCheck = async function runSupabaseHealthCheck(updateBadge = true) {
   const started = performance.now();
   if (!navigator.onLine) {
     diagnostics.apiLabel = '🔴 Χωρίς Internet';
     diagnostics.latencyLabel = '—';
+    diagnostics.lastMessage = 'Η συσκευή δεν έχει σύνδεση Internet.';
     if (updateBadge) setSyncStatus('error', '● Χωρίς Internet');
     return false;
   }
+  if (updateBadge) setSyncStatus('syncing', '● Αυτόματος έλεγχος σύνδεσης…');
   try {
-    const { error } = await withTimeout(supabaseClient.from('manual_app_state').select('id').limit(1), 9000);
-    if (error) throw error;
+    // Χρησιμοποιούμε απευθείας REST έλεγχο. Είναι πιο αξιόπιστος στο iPhone/PWA
+    // και δεν εξαρτάται από την κατάσταση του Realtime καναλιού.
+    await directRestHealthCheck();
     diagnostics.apiLabel = '🟢 Συνδεδεμένο';
     diagnostics.latencyLabel = `${Math.round(performance.now() - started)} ms`;
+    diagnostics.lastMessage = 'Η σύνδεση με το Supabase λειτουργεί.';
     if (updateBadge) setSyncStatus('online', '● Online · Συγχρονισμένο');
     return true;
   } catch (error) {
-    diagnostics.apiLabel = '🔴 Σφάλμα API';
+    console.warn('Supabase health check failed:', error);
+    diagnostics.apiLabel = '🟠 Προσωρινά μη διαθέσιμο';
     diagnostics.latencyLabel = '—';
-    diagnostics.lastMessage = error.message;
-    if (updateBadge) setSyncStatus('error', '● Δεν συνδέθηκε στο Supabase');
+    diagnostics.lastMessage = error.name === 'AbortError' ? 'Ο έλεγχος σύνδεσης καθυστέρησε.' : error.message;
+    if (updateBadge) setSyncStatus('syncing', '● Επανασύνδεση αυτόματα…');
     return false;
   }
 };
@@ -179,14 +208,28 @@ async function cloudDbDelete(store, id) {
     return;
   }
   if (store === 'photos') {
-    const { data, error: fetchError } = await supabaseClient.from('manual_photos').select('storage_path').eq('id', id).maybeSingle();
+    // Πρώτα αφαιρούμε την εγγραφή από τη βάση ώστε η φωτογραφία να εξαφανίζεται
+    // αμέσως από όλες τις συσκευές. Η διαγραφή του αρχείου Storage γίνεται μετά
+    // και είναι best-effort, για να μην μπλοκάρει η διαγραφή από παλιό policy/cache.
+    const { data, error: fetchError } = await supabaseClient
+      .from('manual_photos')
+      .select('storage_path')
+      .eq('id', String(id))
+      .maybeSingle();
     if (fetchError) throw fetchError;
+
+    const { error: rowDeleteError } = await supabaseClient
+      .from('manual_photos')
+      .delete()
+      .eq('id', String(id));
+    if (rowDeleteError) throw rowDeleteError;
+
     if (data?.storage_path) {
-      const { error: storageError } = await supabaseClient.storage.from(STORAGE_BUCKET).remove([data.storage_path]);
-      if (storageError) throw storageError;
+      const { error: storageError } = await supabaseClient.storage
+        .from(STORAGE_BUCKET)
+        .remove([data.storage_path]);
+      if (storageError) console.warn('Η εγγραφή διαγράφηκε, αλλά έμεινε ορφανό αρχείο Storage:', storageError);
     }
-    const { error } = await supabaseClient.from('manual_photos').delete().eq('id', id);
-    if (error) throw error;
     return;
   }
   throw new Error('Μη υποστηριζόμενος τύπος δεδομένων.');
@@ -328,7 +371,7 @@ function scheduleRealtimeRefresh() {
 }
 
 function startRealtime() {
-  supabaseClient.channel('kapachim-project-v2-live')
+  supabaseClient.channel('kapachim-project-v3-live')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_app_state' }, scheduleRealtimeRefresh)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_notes' }, () => renderContent())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_photos' }, () => renderContent())
@@ -338,20 +381,47 @@ function startRealtime() {
     });
 }
 
-window.addEventListener('online', () => loadCloudState({ keepSection: true }));
-window.addEventListener('offline', () => setSyncStatus('error', '● Χωρίς Internet'));
+let reconnectTimer = null;
+let periodicTimer = null;
+let reconnectAttempt = 0;
+
+function clearReconnectTimer() {
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  reconnectTimer = null;
+}
+
+async function automaticConnect({ reload = true, keepSection = true } = {}) {
+  clearReconnectTimer();
+  const ok = await window.runSupabaseHealthCheck(true);
+  if (ok) {
+    reconnectAttempt = 0;
+    if (reload) await loadCloudState({ keepSection });
+    return true;
+  }
+  reconnectAttempt += 1;
+  const delay = Math.min(30000, 3000 * Math.pow(1.55, reconnectAttempt - 1));
+  diagnostics.lastMessage = `Αυτόματη νέα προσπάθεια σε ${Math.ceil(delay / 1000)} δευτερόλεπτα.`;
+  reconnectTimer = setTimeout(() => automaticConnect({ reload: true, keepSection: true }), delay);
+  return false;
+}
+window.automaticKapachimConnect = automaticConnect;
+
+window.addEventListener('online', () => automaticConnect({ reload: true, keepSection: true }));
+window.addEventListener('offline', () => {
+  clearReconnectTimer();
+  setSyncStatus('error', '● Χωρίς Internet');
+});
 window.addEventListener('beforeunload', () => { if (stateSaveTimer) pushCloudState(); });
+window.addEventListener('pageshow', () => automaticConnect({ reload: true, keepSection: true }));
 
 (async () => {
-  await loadCloudState();
+  // Ο έλεγχος ξεκινά αυτόματα και επαναλαμβάνεται μέχρι να ολοκληρωθεί.
+  await automaticConnect({ reload: true, keepSection: false });
   startRealtime();
-  setInterval(() => window.runSupabaseHealthCheck(true), 30000);
+  periodicTimer = setInterval(() => automaticConnect({ reload: false, keepSection: true }), 25000);
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-      window.runSupabaseHealthCheck(true);
-      loadCloudState({ keepSection: true });
-    }
+    if (!document.hidden) automaticConnect({ reload: true, keepSection: true });
   });
-  window.addEventListener('focus', () => window.runSupabaseHealthCheck(true));
+  window.addEventListener('focus', () => automaticConnect({ reload: false, keepSection: true }));
   renderContent();
 })();
