@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b1f46" />
-  <title>Kapachim Custom Manual</title>
+  <title>Kapachim Project v1</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css?v=18" />
 </head>
@@ -77,7 +77,14 @@
     <form method="dialog" id="textForm" class="dialog-form">
       <h2>Προσθήκη πρόσθετου κειμένου</h2>
       <label>Τίτλος<input id="noteTitle" required maxlength="100" placeholder="π.χ. Έλεγχος αντλίας P-801" /></label>
-      <label>Κείμενο<textarea id="noteBody" required rows="8" placeholder="Γράψε τις πρόσθετες πληροφορίες…"></textarea></label>
+      <label>Κείμενο<textarea id="noteBody" required rows="8" placeholder="Γράψε ή κάνε επικόλληση από τις Σημειώσεις iPhone…"></textarea></label>
+      <div class="doc-import-box">
+        <label>Εισαγωγή από αρχείο TXT ή Word DOCX
+          <input id="noteImportFile" type="file" accept=".txt,.docx,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        </label>
+        <button type="button" id="importNoteFileButton" class="btn secondary">Εισαγωγή στο κείμενο</button>
+        <p id="noteImportMessage" class="dialog-help" aria-live="polite">Μπορείς επίσης να κάνεις απευθείας αντιγραφή–επικόλληση από τις Σημειώσεις iPhone.</p>
+      </div>
       <div class="dialog-actions">
         <button value="cancel" class="btn secondary">Ακύρωση</button>
         <button id="saveNote" value="default" class="btn primary">Αποθήκευση</button>
@@ -116,7 +123,24 @@
 Υψηλή θερμοκρασία
 Χωρίς στερεά"></textarea></label>
       <label>Σκοπός ανάλυσης<textarea id="sectionAnalysisInput" rows="3"></textarea></label>
-      <label>Παρατηρήσεις / πρόσθετο κείμενο<textarea id="sectionNotesInput" rows="4"></textarea></label>
+      <label>Παρατηρήσεις / πρόσθετο κείμενο<textarea id="sectionNotesInput" rows="4" placeholder="Γράψε ή κάνε επικόλληση από τις Σημειώσεις iPhone…"></textarea></label>
+      <div class="doc-import-box">
+        <label>Εισαγωγή περιεχομένου από TXT ή Word DOCX
+          <input id="sectionImportFile" type="file" accept=".txt,.docx,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        </label>
+        <label>Τοποθέτηση κειμένου
+          <select id="sectionImportTarget">
+            <option value="desc">Περιγραφή</option>
+            <option value="purpose">Σκοπός</option>
+            <option value="output">Έξοδος / επόμενο στάδιο</option>
+            <option value="properties">Ιδιότητες — μία ανά γραμμή</option>
+            <option value="analysis">Σκοπός ανάλυσης</option>
+            <option value="notes" selected>Παρατηρήσεις / πρόσθετο κείμενο</option>
+          </select>
+        </label>
+        <button type="button" id="importSectionFileButton" class="btn secondary">Εισαγωγή στον τομέα</button>
+        <p id="sectionImportMessage" class="dialog-help" aria-live="polite">Μπορείς επίσης να κάνεις απευθείας αντιγραφή–επικόλληση σε οποιοδήποτε πεδίο.</p>
+      </div>
       <p class="dialog-help">Οι φωτογραφίες DCS και εξωτερικού χώρου προστίθενται μετά την αποθήκευση, από τις αντίστοιχες καρτέλες του τομέα.</p>
       <div class="dialog-actions split"><button type="button" id="deleteSectionBtn" class="btn danger" hidden>Διαγραφή τομέα</button><span></span><button value="cancel" class="btn secondary">Ακύρωση</button><button value="default" class="btn primary">Αποθήκευση</button></div>
     </form>
@@ -149,7 +173,7 @@
   <dialog id="imageDialog" class="image-dialog"><button id="closeImage" class="image-close">✕</button><img id="fullImage" alt="Μεγέθυνση" /></dialog>
 
   <script>
-    window.__KAPACHIM_APP_VERSION__ = "V19";
+    window.__KAPACHIM_APP_VERSION__ = "v1.1";
     window.__KAPACHIM_START_TIME__ = Date.now();
     setTimeout(() => {
       document.querySelectorAll("#syncStatus, #syncStatusMobile").forEach(el => {
@@ -162,7 +186,7 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window.__SUPABASE_CDN_ERROR__=true"></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js" onerror="window.__MAMMOTH_CDN_ERROR__=true"></script>
-  <script src="app.js?v=17"></script>
-  <script src="supabase-sync.js?v=17"></script>
+  <script src="app.js?v=1.1"></script>
+  <script src="supabase-sync.js?v=1"></script>
 </body>
 </html>

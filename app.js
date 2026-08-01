@@ -81,7 +81,7 @@ async function renderContent(){const c=$('#content');if(currentSection.type==='h
 function renderSystemSettings(c){
  const st=window.getSupabaseDiagnostics?.()||{};
  const value=(v,fallback='—')=>escapeHtml(String(v??fallback));
- c.innerHTML=`<div class="settings-page"><div class="section-head-row"><div><h2 class="section-title">Ρυθμίσεις Συστήματος</h2><p>Έλεγχος σύνδεσης, συγχρονισμού και έκδοσης εφαρμογής.</p></div><button class="btn primary run-health-check">Επανέλεγχος τώρα</button></div><div class="status-grid"><section class="status-card"><span>Internet</span><strong>${navigator.onLine?'🟢 Συνδεδεμένο':'🔴 Χωρίς σύνδεση'}</strong></section><section class="status-card"><span>Supabase API</span><strong>${value(st.apiLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Realtime</span><strong>${value(st.realtimeLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Τελευταίος συγχρονισμός</span><strong>${value(st.lastSyncLabel,'Δεν έχει γίνει')}</strong></section><section class="status-card"><span>Έκδοση εφαρμογής</span><strong>V19</strong></section><section class="status-card"><span>Έκδοση βάσης</span><strong>${value(st.schemaVersion,'Schema v1')}</strong></section></div><div class="settings-details"><h3>Διαγνωστικά</h3><dl><div><dt>Project URL</dt><dd>${value(st.projectUrl,'')}</dd></div><div><dt>Κατάσταση φόρτωσης</dt><dd>${value(st.loadState,'Αναμονή')}</dd></div><div><dt>Τελευταίο μήνυμα</dt><dd>${value(st.lastMessage,'—')}</dd></div><div><dt>Χρόνος απόκρισης</dt><dd>${value(st.latencyLabel,'—')}</dd></div></dl><p class="settings-note">Αν η ένδειξη μένει σε έλεγχο, πάτησε «Επανέλεγχος τώρα». Το όνομα του Supabase project δεν επηρεάζει τη σύνδεση· σημασία έχει το Project URL.</p></div></div>`;
+ c.innerHTML=`<div class="settings-page"><div class="section-head-row"><div><h2 class="section-title">Ρυθμίσεις Συστήματος</h2><p>Έλεγχος σύνδεσης, συγχρονισμού και έκδοσης εφαρμογής.</p></div><button class="btn primary run-health-check">Επανέλεγχος τώρα</button></div><div class="status-grid"><section class="status-card"><span>Internet</span><strong>${navigator.onLine?'🟢 Συνδεδεμένο':'🔴 Χωρίς σύνδεση'}</strong></section><section class="status-card"><span>Supabase API</span><strong>${value(st.apiLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Realtime</span><strong>${value(st.realtimeLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Τελευταίος συγχρονισμός</span><strong>${value(st.lastSyncLabel,'Δεν έχει γίνει')}</strong></section><section class="status-card"><span>Έκδοση εφαρμογής</span><strong>v1</strong></section><section class="status-card"><span>Έκδοση βάσης</span><strong>${value(st.schemaVersion,'Schema v1')}</strong></section></div><div class="settings-details"><h3>Διαγνωστικά</h3><dl><div><dt>Project URL</dt><dd>${value(st.projectUrl,'')}</dd></div><div><dt>Κατάσταση φόρτωσης</dt><dd>${value(st.loadState,'Αναμονή')}</dd></div><div><dt>Τελευταίο μήνυμα</dt><dd>${value(st.lastMessage,'—')}</dd></div><div><dt>Χρόνος απόκρισης</dt><dd>${value(st.latencyLabel,'—')}</dd></div></dl><p class="settings-note">Αν η ένδειξη μένει σε έλεγχο, πάτησε «Επανέλεγχος τώρα». Το όνομα του Supabase project δεν επηρεάζει τη σύνδεση· σημασία έχει το Project URL.</p></div></div>`;
  c.querySelector('.run-health-check').onclick=async()=>{await window.runSupabaseHealthCheck?.(true);renderSystemSettings(c)};
 }
 
@@ -208,6 +208,31 @@ function speakDocument(doc){
  else chunks.push('Το έγγραφο εμφανίζεται ως εικόνα από το αρχικό PDF. Πρόσθεσε συνοδευτικό κείμενο ώστε να μπορεί να αναπαραχθεί με φωνή.');
  speakSequence(chunks);
 }
+async function readImportedText(file){
+ if(!file)throw new Error('Επίλεξε πρώτα αρχείο TXT ή DOCX.');
+ let text='';const name=(file.name||'').toLowerCase();
+ if(name.endsWith('.txt')||file.type==='text/plain')text=await file.text();
+ else if(name.endsWith('.docx')){
+  if(!window.mammoth)throw new Error('Δεν φορτώθηκε ο αναγνώστης Word. Δοκίμασε ξανά με Internet ή αποθήκευσε το αρχείο ως TXT.');
+  const result=await window.mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});text=result.value||'';
+ }else throw new Error('Υποστηρίζονται μόνο αρχεία TXT και DOCX.');
+ text=text.replace(/\r\n/g,'\n').trim();
+ if(!text)throw new Error('Το αρχείο δεν περιέχει αναγνώσιμο κείμενο.');
+ return text;
+}
+function appendImportedText(box,text){box.value=box.value.trim()?`${box.value.trim()}\n${text}`:text;}
+async function importNoteFile(){
+ const file=$('#noteImportFile').files?.[0],message=$('#noteImportMessage');
+ try{const text=await readImportedText(file);appendImportedText($('#noteBody'),text);message.textContent=`✓ Εισήχθη το περιεχόμενο από ${file.name}.`}
+ catch(error){message.textContent=`Δεν έγινε εισαγωγή: ${error.message}`}
+}
+async function importSectionFile(){
+ const file=$('#sectionImportFile').files?.[0],message=$('#sectionImportMessage');
+ const map={desc:'#sectionDescInput',purpose:'#sectionPurposeInput',output:'#sectionOutputInput',properties:'#sectionPropertiesInput',analysis:'#sectionAnalysisInput',notes:'#sectionNotesInput'};
+ try{const text=await readImportedText(file);const box=$(map[$('#sectionImportTarget').value]||'#sectionNotesInput');appendImportedText(box,text);message.textContent=`✓ Εισήχθη το περιεχόμενο από ${file.name}.`}
+ catch(error){message.textContent=`Δεν έγινε εισαγωγή: ${error.message}`}
+}
+
 async function importDocumentFile(){
  const input=$('#docImportFile');const file=input.files?.[0];const message=$('#docImportMessage');
  if(!file){message.textContent='Επίλεξε πρώτα αρχείο TXT ή DOCX.';return}
@@ -245,7 +270,7 @@ function resetCurrentDoc(){
  const i=docs.findIndex(d=>d.id===currentDoc.id);docs[i]=cloneValue(original);currentDoc=docs[i];saveDocs();renderContent();
 }
 
-function showTextDialog(){$('#noteTitle').value='';$('#noteBody').value='';$('#textDialog').showModal()}
+function showTextDialog(){$('#noteTitle').value='';$('#noteBody').value='';$('#noteImportFile').value='';$('#noteImportMessage').textContent='Μπορείς επίσης να κάνεις απευθείας αντιγραφή–επικόλληση από τις Σημειώσεις iPhone.';$('#textDialog').showModal()}
 async function saveText(e){e.preventDefault();const title=$('#noteTitle').value.trim(),body=$('#noteBody').value.trim();if(!title||!body)return;await dbAdd('notes',{section:additionKey(),title,body,createdAt:Date.now()});$('#textDialog').close();renderContent()}
 function showPhotoDialog(category='external'){$('#photoCategory').value=category;$('#photoFiles').value='';$('#photoDialog').showModal()}
 async function handlePhotos(files,category){for(const f of files){if(!f.type.startsWith('image/'))continue;const data=await compressImage(f);await dbAdd('photos',{section:additionKey(),category,data,name:f.name,createdAt:Date.now()})}$('#photoDialog').close();renderContent()}
@@ -253,7 +278,7 @@ function compressImage(file){return new Promise((res,rej)=>{const r=new FileRead
 
 function showSectionDialog(section=null){
  editingSectionId=section?.id||null;$('#sectionDialogTitle').textContent=section?'Επεξεργασία τομέα':'Προσθήκη νέου τομέα';
- $('#sectionTitleInput').value=section?.title||'';$('#sectionIconInput').value=section?.icon||'▧';$('#sectionDescInput').value=section?.desc||'';$('#sectionPurposeInput').value=section?.purpose||'';$('#sectionOutputInput').value=section?.output||'';$('#sectionPropertiesInput').value=(section?.properties||[]).join('\n');$('#sectionAnalysisInput').value=section?.analysisPurpose||'';$('#sectionNotesInput').value=section?.notes||'';$('#deleteSectionBtn').hidden=!section||!section.custom;$('#sectionDialog').showModal();
+ $('#sectionTitleInput').value=section?.title||'';$('#sectionIconInput').value=section?.icon||'▧';$('#sectionDescInput').value=section?.desc||'';$('#sectionPurposeInput').value=section?.purpose||'';$('#sectionOutputInput').value=section?.output||'';$('#sectionPropertiesInput').value=(section?.properties||[]).join('\n');$('#sectionAnalysisInput').value=section?.analysisPurpose||'';$('#sectionNotesInput').value=section?.notes||'';$('#sectionImportFile').value='';$('#sectionImportTarget').value='notes';$('#sectionImportMessage').textContent='Μπορείς επίσης να κάνεις απευθείας αντιγραφή–επικόλληση σε οποιοδήποτε πεδίο.';$('#deleteSectionBtn').hidden=!section||!section.custom;$('#sectionDialog').showModal();
 }
 function saveSection(e){
  e.preventDefault();const title=$('#sectionTitleInput').value.trim();if(!title)return;
@@ -268,7 +293,7 @@ function closeSidebar(){$('#sidebar').classList.remove('open');$('#backdrop').cl
 $('#searchInput').oninput=e=>buildNav(e.target.value);$('#openSidebar').onclick=()=>{$('#sidebar').classList.add('open');$('#backdrop').classList.add('show')};$('#closeSidebar').onclick=closeSidebar;$('#backdrop').onclick=closeSidebar;
 $('#addTextTop').onclick=showTextDialog;$('#addTextSide').onclick=showTextDialog;$('#textForm').onsubmit=saveText;$('#addPhotoTop').onclick=()=>showPhotoDialog('external');$('#addPhotoSide').onclick=()=>showPhotoDialog('external');$('#photoForm').onsubmit=async e=>{e.preventDefault();await handlePhotos([...$('#photoFiles').files],$('#photoCategory').value)};
 $('#addSectionTop').onclick=()=>showSectionDialog();$('#addSectionSide').onclick=()=>showSectionDialog();document.querySelectorAll('.edit-section-btn').forEach(b=>b.onclick=()=>editableSection()&&showSectionDialog(currentSection));$('#sectionForm').onsubmit=saveSection;$('#docForm').onsubmit=saveDocEdit;$('#deleteSectionBtn').onclick=deleteCurrentCustomSection;$('#resetSections').onclick=resetSectionData;
-$('#importDocFileButton').onclick=importDocumentFile;$('#systemSettingsButton').onclick=()=>selectSection(settingsSection);
+$('#importDocFileButton').onclick=importDocumentFile;$('#importNoteFileButton').onclick=importNoteFile;$('#importSectionFileButton').onclick=importSectionFile;$('#systemSettingsButton').onclick=()=>selectSection(settingsSection);
 $('#closeImage').onclick=()=>$('#imageDialog').close();$('#openOriginal').onclick=()=>window.open('original-manual.pdf','_blank');
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});buildNav();selectSection(homeSection);
 
