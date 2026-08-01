@@ -49,8 +49,7 @@ create policy "Public read app state" on public.manual_app_state for select to a
 create policy "Public read notes" on public.manual_notes for select to anon, authenticated using (true);
 create policy "Public read photos" on public.manual_photos for select to anon, authenticated using (true);
 
--- Απλή λειτουργία PIN της εφαρμογής: οι εγγραφές γίνονται με το publishable key.
--- Το PIN κρύβει τα κουμπιά επεξεργασίας, αλλά δεν αποτελεί server-side authentication.
+-- Η εφαρμογή V19 λειτουργεί χωρίς PIN. Οι εγγραφές γίνονται με το publishable key και συγχρονίζονται σε όλες τις συσκευές.
 create policy "App write state" on public.manual_app_state for insert to anon, authenticated with check (true);
 create policy "App update state" on public.manual_app_state for update to anon, authenticated using (true) with check (true);
 create policy "App insert notes" on public.manual_notes for insert to anon, authenticated with check (true);

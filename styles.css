@@ -95,10 +95,7 @@ dialog{border:0;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.25);width:
 .auth-actions{flex-wrap:wrap}
 @media(max-width:760px){.sync-status{font-size:.72rem;padding:.4rem .55rem}.top-actions #authButton{display:inline-flex}}
 
-/* V12: δημόσια προβολή / λειτουργία διαχειριστή */
-.admin-only{display:none!important}
-body.admin-mode .admin-only{display:inline-flex!important}
-body.admin-mode #resetSections.admin-only{display:flex!important}
+/* Κοινές βοηθητικές κλάσεις */
 .sidebar-settings{margin:12px 14px 0;width:calc(100% - 28px)}
 .remember-admin{display:flex!important;align-items:center;gap:10px;font-weight:600}
 .remember-admin input{width:auto!important}
@@ -127,5 +124,3 @@ body.admin-mode #resetSections.admin-only{display:flex!important}
 @media(max-width:760px){.status-grid{grid-template-columns:1fr 1fr}.settings-details dl>div{grid-template-columns:1fr;gap:4px}.doc-import-box .btn{width:100%}}
 @media(max-width:430px){.status-grid{grid-template-columns:1fr}}
 
-/* V18 admin state */
-.admin-active{border-color:#22c55e!important;background:#ecfdf5!important;color:#166534!important;font-weight:800!important}.sidebar-admin-link.admin-active{background:rgba(34,197,94,.18)!important;color:#bbf7d0!important}.admin-success{border:2px solid #22c55e;background:#ecfdf5;color:#166534;padding:14px;border-radius:14px;font-weight:800}
