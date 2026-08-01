@@ -114,7 +114,7 @@ function renderManual(c){
  bindZoom(c);const editInline=c.querySelector('.edit-inline');if(editInline){editInline.hidden=false;editInline.onclick=()=>showSectionDialog(currentSection)}c.querySelector('.play-section').onclick=()=>speakSection(currentSection);c.querySelector('.stop-speech').onclick=stopSpeech;c.querySelectorAll('.related-doc').forEach(b=>b.onclick=()=>openRelatedDoc(b.dataset.doc));renderInlineAdditions();
 }
 function renderFlow(c){
- const ids=['brine-saturation','brine-treatment','brine-filtration','filtered-brine','brine-purification','pure-brine','electrolyzer','depleted-brine','dechloration','brine-saturation'];
+ const ids=['brine-saturation','brine-treatment','brine-filtration','filtered-brine','brine-purification','pure-brine','electrolyzer','depleted-brine','dechloration'];
  const flow=ids.map(id=>sections.find(s=>s.id===id)).filter(Boolean);
  const models={
   'brine-saturation':'<span class="mini-tank"></span><span class="mini-tank"></span>',
@@ -127,14 +127,11 @@ function renderFlow(c){
   'depleted-brine':'<span class="mini-horizontal-tank"></span><span class="mini-reactor small"></span>',
   'dechloration':'<span class="mini-tower"></span>'
  };
- const uniqueFlow=flow.slice(0,-1);
- c.innerHTML=`<h2 class="section-title">Ροή Μονάδας</h2><p class="flow-help">Μικρή σχηματική μακέτα της πορείας της άλμης. Πάτησε σε οποιοδήποτε μηχάνημα ή στάδιο για να ανοίξει ο αντίστοιχος τομέας.</p>
- <div class="plant-miniature" role="img" aria-label="Σχηματική μακέτα ροής της μονάδας άλμης">
-  <div class="plant-pipe main-pipe"></div>
-  ${uniqueFlow.map((s,i)=>`<button class="plant-stage stage-${i+1}" data-id="${s.id}"><span class="plant-model">${models[s.id]||'<span class="mini-buffer"></span>'}</span><strong>${escapeHtml(s.title)}</strong><small>${i+1}</small></button>${i<uniqueFlow.length-1?'<span class="plant-flow-arrow">➜</span>':''}`).join('')}
-  <div class="recycle-line"><span>Επιστροφή άλμης</span><b>↩</b></div>
- </div>
- <div class="flow-list compact-flow-list">${flow.map((s,i)=>`<button class="flow-node" data-id="${s.id}"><span>${s.icon||'▧'}</span><strong>${escapeHtml(s.title)}</strong><small>${escapeHtml(s.output||s.purpose||'')}</small></button>${i<flow.length-1?'<div class="flow-arrow">↓</div>':''}`).join('')}</div>`;
+ c.innerHTML=`<h2 class="section-title">Ροή Μονάδας</h2><p class="flow-help">Η γραμμή δείχνει τη διαδρομή της άλμης. Το βέλος στο τέλος κάθε σύνδεσης δείχνει το επόμενο στάδιο. Πάτησε σε οποιοδήποτε στάδιο για να ανοίξει ο αντίστοιχος τομέας.</p>
+ <div class="connected-flow" role="img" aria-label="Συνδεδεμένη ροή της μονάδας άλμης">
+  ${flow.map((s,i)=>`<div class="connected-flow-row"><button class="connected-stage" data-id="${s.id}"><span class="plant-model">${models[s.id]||'<span class="mini-buffer"></span>'}</span><span class="connected-stage-copy"><small>${i+1}</small><strong>${escapeHtml(s.title)}</strong></span></button>${i<flow.length-1?'<div class="process-connector" aria-hidden="true"><span></span></div>':''}</div>`).join('')}
+  <div class="return-connector" aria-label="Επιστροφή από Brine Dechloration στο Brine Saturation"><span>Επιστροφή άλμης προς Brine Saturation</span><i></i></div>
+ </div>`;
  c.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>selectSection(sections.find(s=>s.id===b.dataset.id)));
 }
 async function renderPhotos(c,category){const all=await dbGetPhotos(currentSection.id);const photos=all.filter(p=>(p.category||'external')===category);const builtIns=builtInGallery(currentSection,category);const isDcs=category==='dcs';c.innerHTML=`<div class="section-head-row"><div><h2 class="section-title">${isDcs?'Εικόνες DCS':'Φωτογραφίες εξωτερικού εξοπλισμού'}</h2><p>${isDcs?'Πρόσθεσε επιπλέον οθόνες και σημεία του DCS για αυτόν τον τομέα.':'Πρόσθεσε πραγματικές φωτογραφίες από αντλίες, βάνες, δεξαμενές και άλλο εξωτερικό εξοπλισμό.'}</p></div>${adminEnabled()?`<button class="btn primary add-photo-here">+ Προσθήκη ${isDcs?'DCS':'εξωτερικής'} φωτογραφίας</button>`:''}</div>${builtIns.length?`<h3>Ενσωματωμένες φωτογραφίες</h3><div class="built-in-gallery">${builtIns.map((src,i)=>`<img class="zoomable" src="${src}" alt="${escapeHtml(currentSection.title)} ${i+1}">`).join('')}</div><h3>Δικές μου φωτογραφίες</h3>`:''}<div class="photo-grid large-photos" id="photoGrid"></div>`;renderPhotoGrid(photos,$('#photoGrid'),currentSection.id);bindZoom(c);const addPhotoHere=c.querySelector('.add-photo-here');if(addPhotoHere)addPhotoHere.onclick=()=>showPhotoDialog(category)}
@@ -172,8 +169,8 @@ async function renderStepPhotos(docId,stepIndex){
  const photos=await dbGetPhotos(stepPhotoSection(docId,stepIndex));
  if(!photos.length){host.innerHTML='<span class="step-photo-empty">Δεν έχει προστεθεί φωτογραφία σε αυτό το βήμα.</span>';return}
  host.innerHTML=photos.map(p=>`<div class="step-photo-thumb"><button type="button" class="step-photo-open" aria-label="Άνοιγμα φωτογραφίας"><img src="${p.data}" alt="Φωτογραφία βήματος ${stepIndex+1}"></button>${adminEnabled()?`<button type="button" class="step-photo-delete" data-id="${p.id}" aria-label="Διαγραφή φωτογραφίας">×</button>`:''}</div>`).join('');
- host.querySelectorAll('.step-photo-open').forEach((b,i)=>b.onclick=()=>openImage(photos[i].data));
- host.querySelectorAll('.step-photo-delete').forEach(b=>b.onclick=async event=>{
+ host.querySelectorAll('.step-photo-open').forEach((b,i)=>b.onclick=e=>{if(e.target.closest('.step-photo-delete'))return;openImage(photos[i].data)});
+ host.querySelectorAll('.step-photo-delete').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();e.stopPropagation()};b.onclick=async event=>{
   event.preventDefault();
   event.stopImmediatePropagation();
   if(!confirm('Να διαγραφεί η φωτογραφία αυτού του βήματος;'))return;
@@ -191,11 +188,11 @@ async function renderStepPhotos(docId,stepIndex){
     b.disabled=false;
     b.textContent='×';
   }
- });
+ }});
 }
 async function renderInlineAdditions(key=currentSection.id){const host=$('#inlineAdditions');if(!host)return;const notes=await dbGetNotes(key),photos=await dbGetPhotos(key);const observations=currentSection.type!=='documents'&&currentSection.notes?`<section class="info-box description observations-before-photos"><h3>Παρατηρήσεις</h3><p>${escapeHtml(currentSection.notes)}</p></section>`:'';host.innerHTML=`${observations}<div id="notesList"></div><div class="photo-grid" id="photoGrid"></div>`;renderNotes(notes,host.querySelector('#notesList'),key);renderPhotoGrid(photos,host.querySelector('#photoGrid'),key)}
 function renderNotes(notes,host=$('#notesList')){if(!host)return;host.innerHTML=notes.length?notes.map(n=>`<article class="addition-card"><div class="addition-head"><div><h4>${escapeHtml(n.title)}</h4><p>${escapeHtml(n.body)}</p></div>${adminEnabled()?`<button class="btn danger delete-note" data-id="${n.id}">Διαγραφή</button>`:''}</div></article>`).join(''):'<div class="empty-state">Δεν έχει προστεθεί ακόμη πρόσθετο κείμενο.</div>';host.querySelectorAll('.delete-note').forEach(b=>b.onclick=async()=>{await dbDelete('notes',b.dataset.id);renderContent()})}
-function renderPhotoGrid(photos,host=$('#photoGrid')){if(!host)return;host.innerHTML=photos.length?photos.map(p=>`<div class="photo-card"><img src="${p.data}" alt="Πρόσθετη φωτογραφία" data-src="${p.data}">${adminEnabled()?`<button type="button" class="delete-photo" data-id="${p.id}">✕</button>`:''}</div>`).join(''):'<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>';host.querySelectorAll('img').forEach(i=>i.onclick=()=>openImage(i.dataset.src));host.querySelectorAll('.delete-photo').forEach(b=>b.onclick=async event=>{event.preventDefault();event.stopImmediatePropagation();if(!confirm('Να διαγραφεί αυτή η φωτογραφία;'))return;const id=b.dataset.id;const card=b.closest('.photo-card');b.disabled=true;b.textContent='…';card?.classList.add('deleting');try{await dbDelete('photos',id);card?.remove();if(!host.querySelector('.photo-card'))host.innerHTML='<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>'}catch(error){card?.classList.remove('deleting');b.disabled=false;b.textContent='✕'}})}
+function renderPhotoGrid(photos,host=$('#photoGrid')){if(!host)return;host.innerHTML=photos.length?photos.map(p=>`<div class="photo-card"><img src="${p.data}" alt="Πρόσθετη φωτογραφία" data-src="${p.data}">${adminEnabled()?`<button type="button" class="delete-photo" data-id="${p.id}">✕</button>`:''}</div>`).join(''):'<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>';host.querySelectorAll('img').forEach(i=>i.onclick=()=>openImage(i.dataset.src));host.querySelectorAll('.delete-photo').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();e.stopPropagation()};b.onclick=async event=>{event.preventDefault();event.stopImmediatePropagation();if(!confirm('Να διαγραφεί αυτή η φωτογραφία;'))return;const id=b.dataset.id;const card=b.closest('.photo-card');b.disabled=true;b.textContent='…';card?.classList.add('deleting');try{await dbDelete('photos',id);card?.remove();if(!host.querySelector('.photo-card'))host.innerHTML='<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>'}catch(error){card?.classList.remove('deleting');b.disabled=false;b.textContent='✕'}}})}
 function bindZoom(root){root.querySelectorAll('.zoomable').forEach(i=>i.onclick=()=>openImage(i.src));root.querySelectorAll('.zoom-btn').forEach(b=>b.onclick=()=>openImage(root.querySelector('.manual-image').src))}
 function openImage(src){$('#fullImage').src=src;$('#imageDialog').showModal()}
 function escapeHtml(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}

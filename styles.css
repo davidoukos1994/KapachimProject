@@ -158,3 +158,34 @@ dialog{border:0;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.25);width:
 }
 
 .step-photo-delete,.delete-photo{z-index:10;pointer-events:auto;touch-action:manipulation}.step-photo-thumb.deleting,.photo-card.deleting{opacity:.45;pointer-events:none}
+
+/* KapaChim Project v4 — συνδεδεμένη ροή και ασφαλή κουμπιά διαγραφής */
+.connected-flow{max-width:760px;margin:22px auto;padding:22px 18px;border:1px solid var(--line);border-radius:20px;background:#f6faff;position:relative}
+.connected-flow-row{display:flex;flex-direction:column;align-items:center}
+.connected-stage{width:min(100%,560px);min-height:132px;border:1px solid #c8d6e6;border-radius:18px;background:#fff;padding:16px 20px;display:grid;grid-template-columns:130px 1fr;align-items:center;gap:20px;text-align:left;color:var(--text);cursor:pointer;box-shadow:0 5px 16px rgba(31,62,94,.07)}
+.connected-stage:hover{border-color:var(--blue);background:#fafdff}
+.connected-stage .plant-model{min-height:92px;display:flex;align-items:center;justify-content:center;gap:7px}
+.connected-stage-copy{display:flex;align-items:center;gap:12px}
+.connected-stage-copy small{width:32px;height:32px;display:grid;place-items:center;border-radius:999px;background:#e9f2ff;color:#1f5fa9;font-weight:800;flex:0 0 auto}
+.connected-stage-copy strong{font-size:1.08rem;line-height:1.3}
+.process-connector{height:64px;width:42px;position:relative;display:flex;justify-content:center}
+.process-connector span{display:block;width:5px;height:50px;background:#2875ba;border-radius:999px;position:relative}
+.process-connector span::after{content:"";position:absolute;left:50%;bottom:-2px;width:16px;height:16px;border-right:5px solid #2875ba;border-bottom:5px solid #2875ba;transform:translateX(-50%) rotate(45deg);background:transparent}
+.return-connector{margin:26px auto 2px;width:min(100%,560px);height:66px;border-left:4px solid #6f8396;border-bottom:4px solid #6f8396;border-right:4px solid #6f8396;border-radius:0 0 18px 18px;position:relative;display:flex;align-items:flex-end;justify-content:center;color:#445b70;font-size:.82rem;font-weight:800;padding-bottom:8px}
+.return-connector i{position:absolute;left:-10px;top:-5px;width:16px;height:16px;border-left:5px solid #2875ba;border-top:5px solid #2875ba;transform:rotate(45deg)}
+.step-photo-thumb{overflow:visible}
+.step-photo-open{position:relative;z-index:1;overflow:hidden;border-radius:10px}
+.step-photo-delete,.photo-card .delete-photo{z-index:60!important;pointer-events:auto!important;touch-action:manipulation;isolation:isolate}
+.step-photo-delete{right:-6px;top:-6px;width:34px;height:34px;font-size:23px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.photo-card{overflow:visible}
+.photo-card img{border-radius:12px}
+.photo-card .delete-photo{right:-7px;top:-7px;width:36px;height:36px;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+@media(max-width:760px){
+ .connected-flow{padding:18px 12px}
+ .connected-stage{grid-template-columns:104px 1fr;padding:14px 12px;gap:12px}
+ .connected-stage .plant-model{transform:scale(.86)}
+ .connected-stage-copy{align-items:flex-start;flex-direction:column;gap:7px}
+ .connected-stage-copy strong{font-size:1rem}
+ .process-connector{height:58px}
+ .process-connector span{height:44px}
+}

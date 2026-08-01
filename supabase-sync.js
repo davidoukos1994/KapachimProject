@@ -3,7 +3,7 @@ const SUPABASE_URL = 'https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET = 'manual-media';
 const CLOUD_STATE_ID = 'main';
-const APP_VERSION = 'v3.3';
+const APP_VERSION = 'v4.0';
 
 const diagnostics = {
   projectUrl: SUPABASE_URL,
@@ -211,24 +211,43 @@ async function cloudDbDelete(store, id) {
     const photoId = String(id || '').trim();
     if (!photoId) throw new Error('Δεν βρέθηκε το αναγνωριστικό της φωτογραφίας.');
 
-    // DELETE + SELECT στην ίδια εντολή. Έτσι επιβεβαιώνουμε ότι η εγγραφή
-    // διαγράφηκε πραγματικά και δεν δεχόμαστε σιωπηλή αποτυχία από policy/cache.
-    const { data: deletedRows, error: rowDeleteError } = await withTimeout(
-      supabaseClient
-        .from('manual_photos')
-        .delete()
-        .eq('id', photoId)
-        .select('id,storage_path'),
+    // Πρώτα διαβάζουμε τη διαδρομή Storage. Έπειτα κάνουμε απευθείας REST DELETE
+    // με return=representation, ώστε να μη βασιζόμαστε σε cache ή σε διαφορετική
+    // συμπεριφορά της βιβλιοθήκης Supabase στο iPhone.
+    const { data: existing, error: lookupError } = await withTimeout(
+      supabaseClient.from('manual_photos').select('id,storage_path').eq('id', photoId).maybeSingle(),
       20000
     );
-    if (rowDeleteError) throw rowDeleteError;
-    const deleted = Array.isArray(deletedRows) ? deletedRows[0] : deletedRows;
-    if (!deleted?.id) {
-      throw new Error('Η φωτογραφία δεν διαγράφηκε από τη βάση. Έλεγξε την πολιτική DELETE του manual_photos.');
+    if (lookupError) throw lookupError;
+    if (!existing?.id) return { id: photoId, storage_path: null, alreadyDeleted: true };
+
+    const endpoint = `${SUPABASE_URL}/rest/v1/manual_photos?id=eq.${encodeURIComponent(photoId)}&select=id,storage_path`;
+    const response = await withTimeout(fetch(endpoint, {
+      method: 'DELETE',
+      cache: 'no-store',
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        Accept: 'application/json',
+        Prefer: 'return=representation'
+      }
+    }), 25000);
+    const payloadText = await response.text();
+    if (!response.ok) throw new Error(`Supabase DELETE ${response.status}: ${payloadText.slice(0,220)}`);
+    let deletedRows = [];
+    try { deletedRows = payloadText ? JSON.parse(payloadText) : []; } catch { deletedRows = []; }
+
+    // Υποχρεωτικός επανέλεγχος: η εγγραφή πρέπει να έχει εξαφανιστεί πραγματικά.
+    const { data: verifyRows, error: verifyError } = await withTimeout(
+      supabaseClient.from('manual_photos').select('id').eq('id', photoId).limit(1),
+      20000
+    );
+    if (verifyError) throw verifyError;
+    if (Array.isArray(verifyRows) && verifyRows.length) {
+      throw new Error('Η φωτογραφία παραμένει στη βάση μετά τη διαγραφή. Χρειάζεται έλεγχος της πολιτικής DELETE.');
     }
 
-    // Το αρχείο Storage αφαιρείται μετά. Αν αποτύχει, η φωτογραφία έχει ήδη
-    // εξαφανιστεί από την εφαρμογή και καταγράφουμε μόνο προειδοποίηση.
+    const deleted = deletedRows[0] || existing;
     if (deleted.storage_path) {
       const { error: storageError } = await withTimeout(
         supabaseClient.storage.from(STORAGE_BUCKET).remove([deleted.storage_path]),
