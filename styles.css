@@ -189,3 +189,31 @@ dialog{border:0;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.25);width:
  .process-connector{height:58px}
  .process-connector span{height:44px}
 }
+
+
+/* KapaChim Project v5 — πραγματική μακέτα ροής */
+.process-map{position:relative;max-width:1040px;margin:24px auto 10px;padding:28px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,#f8fbff,#eef6ff);overflow:hidden}
+.map-grid{position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,minmax(190px,auto));grid-template-areas:"a . b" "d c e" "i h g";gap:44px 70px;align-items:center}
+.node-a{grid-area:a}.node-b{grid-area:b}.node-c{grid-area:c}.node-d{grid-area:d}.node-e{grid-area:e}.node-f{grid-area:f;display:none}.node-g{grid-area:g}.node-h{grid-area:h}.node-i{grid-area:i}
+/* το Pure Brine μπαίνει ανάμεσα purification και electrolyzer, σαν ενδιάμεσος κόμβος */
+.node-f{display:flex;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:230px;z-index:4}
+.process-node{min-height:180px;border:1px solid #b9cde4;border-radius:22px;background:#fff;padding:18px 16px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;text-align:center;color:var(--text);box-shadow:0 8px 22px rgba(35,76,118,.08);cursor:pointer;position:relative}
+.process-node:hover{border-color:var(--accent);transform:translateY(-2px)}
+.process-node strong{font-size:18px;line-height:1.15}.process-node small{font-size:12px;line-height:1.35;color:var(--muted);display:block;max-width:240px}
+.node-number{position:absolute;right:12px;top:12px;width:31px;height:31px;border-radius:50%;background:#e8f2ff;color:#1e64aa;display:grid;place-items:center;font-weight:800}
+.node-model{height:76px;display:flex;align-items:flex-end;justify-content:center;gap:6px;color:#7690a8}
+.process-lines{position:absolute;z-index:1;inset:28px;width:calc(100% - 56px);height:calc(100% - 56px);pointer-events:none;overflow:visible}
+.process-lines path{fill:none;stroke:#2576b9;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}.process-lines marker path{fill:#2576b9;stroke:none}.process-lines .return-line{stroke:#5c7996;stroke-dasharray:12 9}
+.flow-return-label{position:absolute;left:28px;bottom:16px;font-size:12px;color:#506b85;background:#f8fbff;padding:3px 8px;border-radius:8px;z-index:3}
+.mobile-flow-line{display:none}
+.flow-vessel,.flow-filter-pair,.flow-resin-pair,.flow-electrolyzer,.flow-depleted,.flow-tower{display:flex;align-items:flex-end;justify-content:center;gap:5px}
+.flow-vessel i{display:block;width:46px;height:65px;border:4px solid currentColor;border-radius:15px 15px 8px 8px;background:linear-gradient(90deg,#fff,#dce8f2,#fff)}
+.flow-vessel.pair i{width:38px;height:58px}.flow-vessel.small i{width:32px;height:50px}.flow-vessel.reactor i{width:54px;height:70px;border-radius:22px 22px 10px 10px}.flow-vessel.settlers i{width:22px;height:47px;border-width:3px}
+.flow-filter-pair i,.flow-resin-pair i{display:block;width:38px;height:66px;border:4px solid currentColor;border-radius:18px;background:repeating-linear-gradient(0deg,#fff 0 8px,#a9bbca 8px 12px)}
+.flow-resin-pair i{background:repeating-linear-gradient(0deg,#fff 0 9px,#d1ad63 9px 13px)}
+.flow-vessel.buffer i{width:58px;height:52px}.flow-vessel.pure i{width:56px;height:69px;background:linear-gradient(90deg,#fff 55%,#2b89df 56% 68%,#eaf4ff 69%)}
+.flow-electrolyzer{width:92px;height:68px;border:4px solid currentColor;border-radius:12px;padding:9px;gap:9px}.flow-electrolyzer i{width:12px;height:46px;border-radius:6px;background:#59a8ea}
+.flow-depleted{gap:7px}.flow-depleted i{display:block;border:4px solid currentColor;background:#fff}.flow-depleted .horizontal{width:76px;height:32px;border-radius:18px}.flow-depleted .reactor-mini{width:35px;height:58px;border-radius:16px}.flow-depleted .mixer-mini{width:28px;height:42px;border-radius:8px}
+.flow-tower i{display:block;width:48px;height:74px;border:4px solid currentColor;border-radius:18px 18px 10px 10px;background:linear-gradient(180deg,#fff,#d9e9f6)}
+@media(max-width:760px){
+ .process-map{padding:20px 14px}.desktop-lines{display:none}.map-grid{display:flex;flex-direction:column;gap:26px;padding-left:34px}.process-node,.node-f{position:relative;left:auto;top:auto;transform:none;width:100%;min-height:150px}.node-f{display:flex}.mobile-flow-line{display:block;position:absolute;left:31px;top:70px;bottom:78px;width:5px;background:#2576b9;border-radius:6px;z-index:1}.mobile-flow-line::after{content:"";position:absolute;left:50%;bottom:-3px;width:16px;height:16px;border-right:5px solid #2576b9;border-bottom:5px solid #2576b9;transform:translateX(-50%) rotate(45deg)}.process-node::before{content:"";position:absolute;left:-39px;top:50%;width:38px;height:5px;background:#2576b9}.flow-return-label{position:relative;left:auto;bottom:auto;margin:18px 0 0 34px;text-align:center}.process-node small{font-size:13px}}

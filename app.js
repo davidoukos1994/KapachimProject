@@ -116,21 +116,38 @@ function renderManual(c){
 function renderFlow(c){
  const ids=['brine-saturation','brine-treatment','brine-filtration','filtered-brine','brine-purification','pure-brine','electrolyzer','depleted-brine','dechloration'];
  const flow=ids.map(id=>sections.find(s=>s.id===id)).filter(Boolean);
- const models={
-  'brine-saturation':'<span class="mini-tank"></span><span class="mini-tank"></span>',
-  'brine-treatment':'<span class="mini-reactor"></span>',
-  'brine-filtration':'<span class="mini-filter"></span><span class="mini-filter"></span>',
-  'filtered-brine':'<span class="mini-buffer"></span>',
-  'brine-purification':'<span class="mini-resin"></span><span class="mini-resin"></span>',
-  'pure-brine':'<span class="mini-pure-tank"></span>',
-  'electrolyzer':'<span class="mini-electrolyzer"><i></i><i></i><i></i></span>',
-  'depleted-brine':'<span class="mini-horizontal-tank"></span><span class="mini-reactor small"></span>',
-  'dechloration':'<span class="mini-tower"></span>'
- };
- c.innerHTML=`<h2 class="section-title">Ροή Μονάδας</h2><p class="flow-help">Η γραμμή δείχνει τη διαδρομή της άλμης. Το βέλος στο τέλος κάθε σύνδεσης δείχνει το επόμενο στάδιο. Πάτησε σε οποιοδήποτε στάδιο για να ανοίξει ο αντίστοιχος τομέας.</p>
- <div class="connected-flow" role="img" aria-label="Συνδεδεμένη ροή της μονάδας άλμης">
-  ${flow.map((s,i)=>`<div class="connected-flow-row"><button class="connected-stage" data-id="${s.id}"><span class="plant-model">${models[s.id]||'<span class="mini-buffer"></span>'}</span><span class="connected-stage-copy"><small>${i+1}</small><strong>${escapeHtml(s.title)}</strong></span></button>${i<flow.length-1?'<div class="process-connector" aria-hidden="true"><span></span></div>':''}</div>`).join('')}
-  <div class="return-connector" aria-label="Επιστροφή από Brine Dechloration στο Brine Saturation"><span>Επιστροφή άλμης προς Brine Saturation</span><i></i></div>
+ const model=(id)=>({
+  'brine-saturation':'<span class="flow-vessel pair"><i></i><i></i></span><span class="flow-vessel small"><i></i></span>',
+  'brine-treatment':'<span class="flow-vessel reactor"><i></i></span><span class="flow-vessel settlers"><i></i><i></i><i></i></span>',
+  'brine-filtration':'<span class="flow-filter-pair"><i></i><i></i></span>',
+  'filtered-brine':'<span class="flow-vessel buffer"><i></i></span>',
+  'brine-purification':'<span class="flow-resin-pair"><i></i><i></i></span>',
+  'pure-brine':'<span class="flow-vessel pure"><i></i></span>',
+  'electrolyzer':'<span class="flow-electrolyzer"><i></i><i></i><i></i></span>',
+  'depleted-brine':'<span class="flow-depleted"><i class="horizontal"></i><i class="reactor-mini"></i><i class="mixer-mini"></i></span>',
+  'dechloration':'<span class="flow-tower"><i></i></span>'
+ }[id]||'<span class="flow-vessel"><i></i></span>');
+ const card=(s,n,pos)=>`<button class="process-node node-${pos}" data-id="${s.id}" aria-label="Άνοιγμα ${escapeHtml(s.title)}"><span class="node-number">${n}</span><span class="node-model">${model(s.id)}</span><strong>${escapeHtml(s.title)}</strong><small>${escapeHtml(s.purpose||s.desc||'')}</small></button>`;
+ c.innerHTML=`<h2 class="section-title">Ροή Μονάδας</h2>
+ <p class="flow-help">Η συνεχόμενη γραμμή δείχνει τη διαδρομή της άλμης και καταλήγει κάθε φορά με βέλος στο επόμενο στάδιο. Κάτω από κάθε μονάδα εμφανίζεται συνοπτικά ο σκοπός της.</p>
+ <div class="process-map" aria-label="Μακέτα ροής μονάδας άλμης">
+  <svg class="process-lines desktop-lines" viewBox="0 0 1000 760" preserveAspectRatio="none" aria-hidden="true">
+   <defs><marker id="flowArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z"></path></marker></defs>
+   <path d="M250 105 H745" marker-end="url(#flowArrow)"></path>
+   <path d="M825 180 V280 H745" marker-end="url(#flowArrow)"></path>
+   <path d="M650 340 H255" marker-end="url(#flowArrow)"></path>
+   <path d="M175 410 V505 H255" marker-end="url(#flowArrow)"></path>
+   <path d="M350 565 H745" marker-end="url(#flowArrow)"></path>
+   <path d="M825 635 V700 H650" marker-end="url(#flowArrow)"></path>
+   <path d="M555 700 H350" marker-end="url(#flowArrow)"></path>
+   <path d="M255 700 H150 V620" marker-end="url(#flowArrow)"></path>
+   <path class="return-line" d="M100 545 V220 Q100 105 205 105" marker-end="url(#flowArrow)"></path>
+  </svg>
+  <div class="map-grid">
+   ${card(flow[0],1,'a')}${card(flow[1],2,'b')}${card(flow[2],3,'c')}${card(flow[3],4,'d')}${card(flow[4],5,'e')}${card(flow[5],6,'f')}${card(flow[6],7,'g')}${card(flow[7],8,'h')}${card(flow[8],9,'i')}
+  </div>
+  <div class="mobile-flow-line" aria-hidden="true"></div>
+  <div class="flow-return-label">Επιστροφή άλμης προς Brine Saturation</div>
  </div>`;
  c.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>selectSection(sections.find(s=>s.id===b.dataset.id)));
 }
@@ -354,6 +371,6 @@ function setupSectionSwipe(){
  },{passive:true});
 }
 
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});setupSectionSwipe();buildNav();selectSection(homeSection);
+if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}if('caches' in window){caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});}setupSectionSwipe();buildNav();selectSection(homeSection);
 
 window.refreshAdminVisibility=function(){buildNav(document.querySelector('#searchInput')?.value||'');updateEditButtons();renderContent();};
