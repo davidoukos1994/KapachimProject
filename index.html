@@ -39,10 +39,10 @@
               <button id="nextSectionTop" class="btn primary next-section-top" hidden>Επόμενη σελίδα →</button>
             </div>
           </div>
-          <div id="syncStatusMobile" class="sync-status mobile-sync syncing">● Έλεγχος σύνδεσης…</div>
+          <div id="syncStatusMobile" class="sync-status mobile-sync syncing">● Φόρτωση online…</div>
         </div>
         <div class="top-actions">
-          <div id="syncStatus" class="sync-status syncing">● Έλεγχος σύνδεσης…</div>
+          <div id="syncStatus" class="sync-status syncing">● Φόρτωση online…</div>
           <button id="refreshPageButton" class="btn secondary">↻ Ανανέωση</button>
           <button id="systemSettingsButton" class="btn secondary">⚙️ Ρυθμίσεις</button>
           <button id="openOriginal" class="btn secondary">Άνοιγμα αρχικού PDF</button>
@@ -177,14 +177,14 @@
   <dialog id="imageDialog" class="image-dialog"><button id="closeImage" class="image-close">✕</button><img id="fullImage" alt="Μεγέθυνση" /></dialog>
 
   <script>
-    window.__KAPACHIM_APP_VERSION__ = "v8";
+    window.__KAPACHIM_APP_VERSION__ = "v9";
     window.__KAPACHIM_START_TIME__ = Date.now();
     // Η κατάσταση σύνδεσης ενημερώνεται αυτόματα από το supabase-sync.js.
     // Δεν εμφανίζουμε πλέον ψευδές σφάλμα μετά από σταθερό χρονικό όριο.
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window.__SUPABASE_CDN_ERROR__=true"></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js" onerror="window.__MAMMOTH_CDN_ERROR__=true"></script>
-  <script src="app.js?v=8.0"></script>
-  <script src="supabase-sync.js?v=8.0"></script>
+  <script src="app.js?v=9.0"></script>
+  <script src="supabase-sync.js?v=9.0"></script>
 </body>
 </html>
