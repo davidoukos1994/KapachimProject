@@ -1,305 +1,43 @@
-/* KapaChim Project v5 — αξιόπιστος συγχρονισμός Supabase */
-const SUPABASE_URL = 'https://bvseqstpqdzferqzbsgf.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
-const STORAGE_BUCKET = 'manual-media';
-const CLOUD_STATE_ID = 'main';
-const APP_VERSION = 'v5.0';
-
-const diagnostics = {
-  projectUrl: SUPABASE_URL,
-  schemaVersion: 'Schema v3',
-  apiLabel: 'Έλεγχος…',
-  realtimeLabel: 'Αναμονή',
-  lastSyncLabel: localStorage.getItem('kapachim.lastSync.v5') || 'Δεν έχει γίνει',
-  loadState: 'Εκκίνηση',
-  lastMessage: '',
-  latencyLabel: '—'
-};
-window.getSupabaseDiagnostics = () => ({ ...diagnostics });
-window.isAdminMode = () => true;
-window.showAdminDialog = () => {};
-
-function setSyncStatus(mode, text) {
-  diagnostics.loadState = mode;
-  diagnostics.lastMessage = text;
-  document.querySelectorAll('#syncStatus, #syncStatusMobile').forEach(el => {
-    el.className = `sync-status ${el.id === 'syncStatusMobile' ? 'mobile-sync ' : ''}${mode}`;
-    el.textContent = text;
-  });
-}
-window.setKapachimSyncStatus = setSyncStatus;
-
-function markSynced(message='Online · Συγχρονισμένο') {
-  diagnostics.apiLabel = '🟢 Συνδεδεμένο';
-  diagnostics.lastSyncLabel = new Date().toLocaleString('el-GR');
-  diagnostics.lastMessage = message;
-  localStorage.setItem('kapachim.lastSync.v5', diagnostics.lastSyncLabel);
-  setSyncStatus('online', '● Online · Συγχρονισμένο');
-}
-
-function timeout(ms, message='Η σύνδεση καθυστέρησε.') {
-  return new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms));
-}
-function withTimeout(promise, ms=20000, message) { return Promise.race([promise, timeout(ms, message)]); }
-
-if (!window.supabase) {
-  diagnostics.apiLabel = '🔴 Δεν φορτώθηκε η βιβλιοθήκη';
-  setSyncStatus('error', '● Σφάλμα Supabase');
-  throw new Error('Η βιβλιοθήκη Supabase δεν φορτώθηκε.');
-}
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  realtime: { params: { eventsPerSecond: 5 } },
-  global: { headers: { 'x-client-info': 'kapachim-project-v5' } }
-});
-window.kapachimSupabase = supabaseClient;
-
-function headers(extra={}) {
-  return {
-    apikey: SUPABASE_PUBLISHABLE_KEY,
-    Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-    Accept: 'application/json',
-    ...extra
-  };
-}
-
-async function rest(path, options={}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeout || 22000);
-  try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-      cache: 'no-store',
-      ...options,
-      headers: headers(options.headers || {}),
-      signal: controller.signal
-    });
-    const raw = await response.text();
-    if (!response.ok) throw new Error(`Supabase ${response.status}: ${raw.slice(0,250)}`);
-    if (!raw) return null;
-    try { return JSON.parse(raw); } catch { return raw; }
-  } finally { clearTimeout(timer); }
-}
-
-async function healthCheck(updateBadge=true) {
-  const started = performance.now();
-  if (!navigator.onLine) {
-    diagnostics.apiLabel = '🔴 Χωρίς Internet';
-    if (updateBadge) setSyncStatus('error','● Χωρίς Internet');
-    return false;
-  }
-  if (updateBadge) setSyncStatus('syncing','● Σύνδεση με Supabase…');
-  try {
-    await rest('manual_app_state?select=id&id=eq.main&limit=1');
-    diagnostics.latencyLabel = `${Math.round(performance.now()-started)} ms`;
-    markSynced('Ο έλεγχος σύνδεσης ολοκληρώθηκε.');
-    return true;
-  } catch (error) {
-    diagnostics.apiLabel = '🟠 Επανασύνδεση';
-    diagnostics.lastMessage = error.message;
-    if (updateBadge) setSyncStatus('syncing','● Αυτόματη επανασύνδεση…');
-    return false;
-  }
-}
-window.runSupabaseHealthCheck = healthCheck;
-
-function publicPhotoUrl(path) {
-  return path ? supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl : '';
-}
-function dataUrlToBlob(dataUrl) {
-  const [header,payload] = String(dataUrl).split(',');
-  const mime = (header.match(/data:([^;]+)/)||[])[1] || 'image/jpeg';
-  const bytes = Uint8Array.from(atob(payload||''), c=>c.charCodeAt(0));
-  return new Blob([bytes], {type:mime});
-}
-function safeFileName(name='photo.jpg') {
-  return String(name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'') || 'photo.jpg';
-}
-
-let writeQueue = Promise.resolve();
-function queueWrite(task) {
-  const run = writeQueue.then(task,task);
-  writeQueue = run.catch(()=>{});
-  return run;
-}
-
-async function addNote(value) {
-  const rows = await rest('manual_notes?select=id', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Prefer':'return=representation'},
-    body:JSON.stringify({section:String(value.section||'general'),title:String(value.title||'Σημείωση'),body:String(value.body||'')})
-  });
-  return rows?.[0]?.id;
-}
-
-async function addPhoto(value) {
-  if (!value?.data) throw new Error('Δεν βρέθηκαν δεδομένα εικόνας.');
-  const blob = dataUrlToBlob(value.data);
-  const filename = safeFileName(value.name || `photo-${Date.now()}.jpg`);
-  const section = String(value.section||'general');
-  const category = String(value.category||'external');
-  const uid = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
-  const storagePath = `${section}/${category}/${Date.now()}-${uid}-${filename}`;
-  const {error:uploadError} = await withTimeout(supabaseClient.storage.from(STORAGE_BUCKET).upload(storagePath,blob,{contentType:blob.type||'image/jpeg',cacheControl:'3600',upsert:false}),50000);
-  if (uploadError) throw uploadError;
-  try {
-    const rows = await rest('manual_photos?select=id', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Prefer':'return=representation'},
-      body:JSON.stringify({section,category,storage_path:storagePath,name:filename})
-    });
-    return rows?.[0]?.id;
-  } catch (error) {
-    await supabaseClient.storage.from(STORAGE_BUCKET).remove([storagePath]);
-    throw error;
-  }
-}
-
-async function cloudGet(store,section) {
-  if (store==='notes') {
-    const rows = await rest(`manual_notes?select=*&section=eq.${encodeURIComponent(section)}&order=created_at.asc`);
-    return (rows||[]).map(r=>({...r,createdAt:new Date(r.created_at).getTime()}));
-  }
-  if (store==='photos') {
-    const rows = await rest(`manual_photos?select=*&section=eq.${encodeURIComponent(section)}&order=created_at.asc`);
-    return (rows||[]).map(r=>({...r,data:`${publicPhotoUrl(r.storage_path)}?v=${encodeURIComponent(r.id)}-${Date.now()}`,createdAt:new Date(r.created_at).getTime()}));
-  }
-  return [];
-}
-
-async function deletePhoto(id) {
-  const photoId = String(id||'').trim();
-  if (!photoId) throw new Error('Δεν βρέθηκε το ID της φωτογραφίας.');
-  const found = await rest(`manual_photos?select=id,storage_path&id=eq.${encodeURIComponent(photoId)}&limit=1`);
-  if (!found?.length) return;
-  const storagePath = found[0].storage_path;
-  const deleted = await rest(`manual_photos?id=eq.${encodeURIComponent(photoId)}&select=id,storage_path`, {
-    method:'DELETE', headers:{'Prefer':'return=representation'}
-  });
-  if (!deleted?.length) throw new Error('Η βάση δεν επιβεβαίωσε τη διαγραφή της φωτογραφίας.');
-  const verify = await rest(`manual_photos?select=id&id=eq.${encodeURIComponent(photoId)}&limit=1`);
-  if (verify?.length) throw new Error('Η φωτογραφία παραμένει στη βάση μετά τη διαγραφή.');
-  if (storagePath) {
-    const {error} = await withTimeout(supabaseClient.storage.from(STORAGE_BUCKET).remove([storagePath]),25000);
-    if (error) console.warn('Η εγγραφή διαγράφηκε αλλά απέτυχε η διαγραφή του αρχείου Storage:',error);
-  }
-}
-
-async function cloudDelete(store,id) {
-  if (store==='photos') return deletePhoto(id);
-  if (store==='notes') {
-    const rows = await rest(`manual_notes?id=eq.${encodeURIComponent(id)}&select=id`, {method:'DELETE',headers:{'Prefer':'return=representation'}});
-    if (!rows?.length) throw new Error('Η διαγραφή του κειμένου δεν επιβεβαιώθηκε.');
-    return;
-  }
-  throw new Error('Μη υποστηριζόμενος τύπος δεδομένων.');
-}
-
-// Αντικατάσταση του τοπικού IndexedDB με online λειτουργίες.
-dbAdd = function(store,value) {
-  return queueWrite(async()=>{
-    setSyncStatus('syncing',store==='photos'?'● Ανέβασμα φωτογραφίας…':'● Αποθήκευση online…');
-    try {
-      const id = store==='photos' ? await addPhoto(value) : await addNote(value);
-      markSynced(store==='photos'?'Η φωτογραφία αποθηκεύτηκε online.':'Το κείμενο αποθηκεύτηκε online.');
-      return id;
-    } catch(error) {
-      setSyncStatus('error','● Σφάλμα αποθήκευσης');
-      alert(`Η αλλαγή δεν αποθηκεύτηκε online.\n${error.message}`);
-      throw error;
-    }
-  });
-};
-dbGetBySection = async (store,section)=>{
-  try { const rows=await cloudGet(store,section); diagnostics.apiLabel='🟢 Συνδεδεμένο'; return rows; }
-  catch(error){ diagnostics.lastMessage=error.message; setSyncStatus('syncing','● Αυτόματη επανασύνδεση…'); throw error; }
-};
-dbGetNotes = section=>dbGetBySection('notes',section);
-dbGetPhotos = section=>dbGetBySection('photos',section);
-dbDelete = function(store,id) {
-  return queueWrite(async()=>{
-    setSyncStatus('syncing','● Διαγραφή online…');
-    try { await cloudDelete(store,id); markSynced('Η διαγραφή ολοκληρώθηκε online.'); }
-    catch(error){ setSyncStatus('error','● Σφάλμα διαγραφής'); alert(`Η διαγραφή δεν ολοκληρώθηκε.\n${error.message}`); throw error; }
-  });
-};
-
-const originalSaveSections = saveSections;
-const originalSaveDocs = saveDocs;
-let loadingCloud=false, writingState=false, stateTimer=null, realtimeRefreshTimer=null;
-
-async function pushState() {
-  if (loadingCloud) return;
-  writingState=true;
-  try {
-    await rest('manual_app_state?on_conflict=id', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify({id:CLOUD_STATE_ID,sections,docs,updated_at:new Date().toISOString()})
-    });
-    markSynced('Τομείς και έγγραφα αποθηκεύτηκαν online.');
-  } finally { writingState=false; }
-}
-function scheduleStatePush(){clearTimeout(stateTimer);stateTimer=setTimeout(()=>queueWrite(pushState).catch(error=>{setSyncStatus('error','● Η αλλαγή δεν αποθηκεύτηκε');alert(`Η αλλαγή δεν αποθηκεύτηκε στο Supabase.\n${error.message}`)}),500)}
-saveSections=function(){originalSaveSections();scheduleStatePush();};
-saveDocs=function(){originalSaveDocs();scheduleStatePush();};
-window.flushKapachimSync=()=>queueWrite(pushState);
-
-async function loadState({keepSection=true}={}) {
-  if (loadingCloud||writingState) return false;
-  loadingCloud=true;
-  const previousSection=currentSection?.id, previousDoc=currentDoc?.id;
-  setSyncStatus('syncing','● Φόρτωση online…');
-  try {
-    const rows = await rest('manual_app_state?select=sections,docs,updated_at&id=eq.main&limit=1');
-    const data=rows?.[0];
-    if (data?.sections?.length || data?.docs?.length) {
-      if (data.sections?.length) sections=data.sections;
-      if (data.docs?.length) docs=data.docs;
-      currentDoc=docs.find(d=>d.id===previousDoc)||docs[0];
-      originalSaveSections(); originalSaveDocs();
-    } else await pushState();
-    buildNav(document.querySelector('#searchInput')?.value||'');
-    if (keepSection && previousSection) selectSection(sections.find(s=>s.id===previousSection)||homeSection); else selectSection(homeSection);
-    markSynced('Online δεδομένα φορτώθηκαν.');
-    return true;
-  } finally { loadingCloud=false; }
-}
+/* Kapachim Project v6 — οριστικός Supabase συγχρονισμός */
+const SUPABASE_URL='https://bvseqstpqdzferqzbsgf.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
+const STORAGE_BUCKET='manual-media';
+const CLOUD_STATE_ID='main';
+const APP_VERSION='v6';
+const diagnostics={projectUrl:SUPABASE_URL,schemaVersion:'Schema v4',apiLabel:'Έλεγχος…',realtimeLabel:'Αναμονή',lastSyncLabel:localStorage.getItem('kapachim.lastSync.v6')||'Δεν έχει γίνει',loadState:'Εκκίνηση',lastMessage:'',latencyLabel:'—'};
+window.getSupabaseDiagnostics=()=>({...diagnostics});window.isAdminMode=()=>true;window.showAdminDialog=()=>{};
+function setSyncStatus(mode,text){diagnostics.loadState=mode;diagnostics.lastMessage=text;document.querySelectorAll('#syncStatus,#syncStatusMobile').forEach(el=>{el.className=`sync-status ${el.id==='syncStatusMobile'?'mobile-sync ':''}${mode}`;el.textContent=text})}
+window.setKapachimSyncStatus=setSyncStatus;
+function markSynced(message='Online · Συγχρονισμένο'){diagnostics.apiLabel='🟢 Συνδεδεμένο';diagnostics.lastSyncLabel=new Date().toLocaleString('el-GR');diagnostics.lastMessage=message;localStorage.setItem('kapachim.lastSync.v6',diagnostics.lastSyncLabel);setSyncStatus('online','● Online · Συγχρονισμένο')}
+if(!window.supabase){setSyncStatus('error','● Δεν φορτώθηκε το Supabase');throw new Error('Supabase library missing')}
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},realtime:{params:{eventsPerSecond:5}}});window.kapachimSupabase=supabaseClient;
+function apiHeaders(extra={}){return{apikey:SUPABASE_PUBLISHABLE_KEY,Authorization:`Bearer ${SUPABASE_PUBLISHABLE_KEY}`,Accept:'application/json',...extra}}
+async function request(path,{timeout=25000,...options}={}){const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),timeout);try{const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{cache:'no-store',...options,headers:apiHeaders(options.headers||{}),signal:ctrl.signal});const raw=await r.text();if(!r.ok)throw new Error(`Supabase ${r.status}: ${raw.slice(0,400)}`);if(!raw)return null;try{return JSON.parse(raw)}catch{return raw}}finally{clearTimeout(timer)}}
+async function rpc(name,args={}){return request(`rpc/${name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(args)})}
+async function healthCheck(update=true){const t=performance.now();if(!navigator.onLine){if(update)setSyncStatus('error','● Χωρίς Internet');return false}if(update)setSyncStatus('syncing','● Σύνδεση με Supabase…');try{await rpc('kapachim_ping');diagnostics.latencyLabel=`${Math.round(performance.now()-t)} ms`;markSynced();return true}catch(e){diagnostics.apiLabel='🟠 Επανασύνδεση';diagnostics.lastMessage=e.message;if(update)setSyncStatus('syncing','● Αυτόματη επανασύνδεση…');return false}}
+window.runSupabaseHealthCheck=healthCheck;
+function dataUrlToBlob(dataUrl){const [h,p]=String(dataUrl).split(',');const mime=(h.match(/data:([^;]+)/)||[])[1]||'image/jpeg';return new Blob([Uint8Array.from(atob(p||''),c=>c.charCodeAt(0))],{type:mime})}
+function safeName(n='photo.jpg'){return String(n).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'')||'photo.jpg'}
+function photoUrl(path,id){const u=supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;return `${u}?id=${encodeURIComponent(id)}&t=${Date.now()}`}
+let writeQueue=Promise.resolve();function queued(task){const r=writeQueue.then(task,task);writeQueue=r.catch(()=>{});return r}
+async function addNote(v){const rows=await request('manual_notes?select=id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({section:String(v.section||'general'),title:String(v.title||'Σημείωση'),body:String(v.body||'')})});return rows?.[0]?.id}
+async function addPhoto(v){if(!v?.data)throw new Error('Δεν βρέθηκε εικόνα.');const blob=dataUrlToBlob(v.data),section=String(v.section||'general'),category=String(v.category||'external'),name=safeName(v.name||`photo-${Date.now()}.jpg`),uid=crypto.randomUUID?.()||Math.random().toString(36).slice(2),path=`${section}/${category}/${Date.now()}-${uid}-${name}`;const {error}=await supabaseClient.storage.from(STORAGE_BUCKET).upload(path,blob,{contentType:blob.type,cacheControl:'0',upsert:false});if(error)throw error;try{const rows=await request('manual_photos?select=id',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({section,category,storage_path:path,name})});return rows?.[0]?.id}catch(e){await supabaseClient.storage.from(STORAGE_BUCKET).remove([path]);throw e}}
+async function cloudGet(store,section){if(store==='notes'){const r=await request(`manual_notes?select=*&section=eq.${encodeURIComponent(section)}&order=created_at.asc`);return(r||[]).map(x=>({...x,createdAt:new Date(x.created_at).getTime()}))}if(store==='photos'){const r=await request(`manual_photos?select=*&section=eq.${encodeURIComponent(section)}&order=created_at.asc`);return(r||[]).map(x=>({...x,data:photoUrl(x.storage_path,x.id),createdAt:new Date(x.created_at).getTime()}))}return[]}
+async function deletePhoto(id){const path=await rpc('kapachim_delete_photo',{p_id:String(id)});const storagePath=typeof path==='string'?path:(Array.isArray(path)?path[0]:path);const verify=await request(`manual_photos?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);if(verify?.length)throw new Error('Η φωτογραφία δεν διαγράφηκε από τη βάση.');if(storagePath){const {error}=await supabaseClient.storage.from(STORAGE_BUCKET).remove([storagePath]);if(error)console.warn('Storage delete:',error)}}
+async function deleteNote(id){await rpc('kapachim_delete_note',{p_id:String(id)});const verify=await request(`manual_notes?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);if(verify?.length)throw new Error('Το κείμενο δεν διαγράφηκε από τη βάση.')}
+dbAdd=(store,v)=>queued(async()=>{setSyncStatus('syncing',store==='photos'?'● Ανέβασμα φωτογραφίας…':'● Αποθήκευση online…');try{const id=store==='photos'?await addPhoto(v):await addNote(v);markSynced();return id}catch(e){setSyncStatus('error','● Σφάλμα αποθήκευσης');alert(`Η αλλαγή δεν αποθηκεύτηκε online.\n${e.message}`);throw e}});
+dbGetBySection=async(store,section)=>cloudGet(store,section);dbGetNotes=s=>cloudGet('notes',s);dbGetPhotos=s=>cloudGet('photos',s);
+dbDelete=(store,id)=>queued(async()=>{setSyncStatus('syncing','● Διαγραφή online…');try{store==='photos'?await deletePhoto(id):await deleteNote(id);markSynced('Η διαγραφή ολοκληρώθηκε.');return true}catch(e){setSyncStatus('error','● Σφάλμα διαγραφής');alert(`Η διαγραφή δεν ολοκληρώθηκε.\n${e.message}`);throw e}});
+const localSaveSections=saveSections,localSaveDocs=saveDocs;let loading=false,writing=false,stateTimer=null;
+async function pushState(){if(loading)return;writing=true;try{await rpc('kapachim_save_state',{p_sections:sections,p_docs:docs});markSynced('Οι αλλαγές αποθηκεύτηκαν online.')}finally{writing=false}}
+function schedulePush(){clearTimeout(stateTimer);stateTimer=setTimeout(()=>queued(pushState).catch(e=>{setSyncStatus('error','● Σφάλμα αποθήκευσης');alert(`Δεν αποθηκεύτηκαν οι αλλαγές.\n${e.message}`)}),350)}
+saveSections=function(){localSaveSections();schedulePush()};saveDocs=function(){localSaveDocs();schedulePush()};window.flushKapachimSync=()=>queued(pushState);
+async function loadState({keepSection=true}={}){if(loading||writing)return false;loading=true;const sid=currentSection?.id,did=currentDoc?.id;setSyncStatus('syncing','● Φόρτωση online…');try{const result=await rpc('kapachim_get_state');const data=Array.isArray(result)?result[0]:result;if(data?.sections?.length||data?.docs?.length){if(data.sections?.length)sections=data.sections;if(data.docs?.length)docs=data.docs;currentDoc=docs.find(d=>d.id===did)||docs[0];localSaveSections();localSaveDocs()}else await pushState();buildNav(document.querySelector('#searchInput')?.value||'');if(keepSection&&sid)selectSection(sections.find(s=>s.id===sid)||homeSection);markSynced('Online δεδομένα φορτώθηκαν.');return true}finally{loading=false}}
 window.reloadKapachimCloudState=loadState;
-
-let retryTimer=null, retryCount=0, lastSuccessfulCheck=0;
-function scheduleRetry(){clearTimeout(retryTimer);const delay=Math.min(30000,1500*Math.pow(1.55,retryCount++));retryTimer=setTimeout(()=>connectAndLoad(false),delay)}
-async function connectAndLoad(fullReload=true) {
-  if (!navigator.onLine){setSyncStatus('error','● Χωρίς Internet');scheduleRetry();return false;}
-  try {
-    if(fullReload) await loadState({keepSection:true}); else await healthCheck(false);
-    retryCount=0; lastSuccessfulCheck=Date.now(); markSynced('Online · Συγχρονισμένο'); return true;
-  } catch(error) {
-    diagnostics.lastMessage=error.message; diagnostics.apiLabel='🟠 Επανασύνδεση';
-    setSyncStatus('syncing','● Αυτόματη επανασύνδεση…'); scheduleRetry(); return false;
-  }
-}
-window.automaticKapachimConnect=({reload=true}={})=>connectAndLoad(reload);
-
-function startRealtime(){
-  supabaseClient.channel('kapachim-v5-live')
-   .on('postgres_changes',{event:'*',schema:'public',table:'manual_app_state'},()=>{if(!writingState){clearTimeout(realtimeRefreshTimer);realtimeRefreshTimer=setTimeout(()=>loadState({keepSection:true}),500)}})
-   .on('postgres_changes',{event:'*',schema:'public',table:'manual_notes'},()=>renderContent())
-   .on('postgres_changes',{event:'*',schema:'public',table:'manual_photos'},()=>renderContent())
-   .subscribe(status=>{diagnostics.realtimeLabel=status==='SUBSCRIBED'?'🟢 Ενεργό':(status==='CHANNEL_ERROR'||status==='TIMED_OUT'?'🟠 Επανασύνδεση':'Αναμονή')});
-}
-
-window.addEventListener('online',()=>connectAndLoad(true));
-window.addEventListener('offline',()=>setSyncStatus('error','● Χωρίς Internet'));
-window.addEventListener('pageshow',()=>connectAndLoad(true));
-window.addEventListener('focus',()=>{if(Date.now()-lastSuccessfulCheck>8000)connectAndLoad(false)});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)connectAndLoad(true)});
-
-(async()=>{
-  // Καθαρίζει παλιές PWA cache/Service Workers που κρατούσαν κώδικα V3/V4.
-  try { if('serviceWorker' in navigator){const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.unregister()));} if('caches' in window){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));} } catch(e){console.warn(e)}
-  startRealtime();
-  await connectAndLoad(true);
-  setInterval(()=>connectAndLoad(false),15000);
-  renderContent();
-})();
+let retryTimer=null,retries=0,lastOk=0;function retry(){clearTimeout(retryTimer);retryTimer=setTimeout(()=>connect(true),Math.min(20000,1000*Math.pow(1.45,retries++)))}
+async function connect(reload=true){if(!navigator.onLine){setSyncStatus('error','● Χωρίς Internet');retry();return false}try{reload?await loadState({keepSection:true}):await healthCheck(false);retries=0;lastOk=Date.now();markSynced();return true}catch(e){diagnostics.lastMessage=e.message;setSyncStatus('syncing','● Αυτόματη επανασύνδεση…');retry();return false}}
+window.automaticKapachimConnect=({reload=true}={})=>connect(reload);
+function realtime(){supabaseClient.channel('kapachim-v6').on('postgres_changes',{event:'*',schema:'public',table:'manual_app_state'},()=>{if(!writing)setTimeout(()=>loadState({keepSection:true}),250)}).on('postgres_changes',{event:'*',schema:'public',table:'manual_notes'},()=>renderContent()).on('postgres_changes',{event:'*',schema:'public',table:'manual_photos'},()=>renderContent()).subscribe(s=>diagnostics.realtimeLabel=s==='SUBSCRIBED'?'🟢 Ενεργό':s)}
+async function boot(){try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()))}if('caches'in window){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))} }catch(e){}realtime();await connect(true);setInterval(()=>connect(false),30000)}
+window.addEventListener('online',()=>connect(true));window.addEventListener('offline',()=>setSyncStatus('error','● Χωρίς Internet'));window.addEventListener('pageshow',()=>connect(true));window.addEventListener('focus',()=>{if(Date.now()-lastOk>10000)connect(true)});document.addEventListener('visibilitychange',()=>{if(!document.hidden)connect(true)});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();

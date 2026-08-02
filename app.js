@@ -116,38 +116,20 @@ function renderManual(c){
 function renderFlow(c){
  const ids=['brine-saturation','brine-treatment','brine-filtration','filtered-brine','brine-purification','pure-brine','electrolyzer','depleted-brine','dechloration'];
  const flow=ids.map(id=>sections.find(s=>s.id===id)).filter(Boolean);
- const model=(id)=>({
-  'brine-saturation':'<span class="flow-vessel pair"><i></i><i></i></span><span class="flow-vessel small"><i></i></span>',
-  'brine-treatment':'<span class="flow-vessel reactor"><i></i></span><span class="flow-vessel settlers"><i></i><i></i><i></i></span>',
-  'brine-filtration':'<span class="flow-filter-pair"><i></i><i></i></span>',
-  'filtered-brine':'<span class="flow-vessel buffer"><i></i></span>',
-  'brine-purification':'<span class="flow-resin-pair"><i></i><i></i></span>',
-  'pure-brine':'<span class="flow-vessel pure"><i></i></span>',
-  'electrolyzer':'<span class="flow-electrolyzer"><i></i><i></i><i></i></span>',
-  'depleted-brine':'<span class="flow-depleted"><i class="horizontal"></i><i class="reactor-mini"></i><i class="mixer-mini"></i></span>',
-  'dechloration':'<span class="flow-tower"><i></i></span>'
- }[id]||'<span class="flow-vessel"><i></i></span>');
- const card=(s,n,pos)=>`<button class="process-node node-${pos}" data-id="${s.id}" aria-label="Άνοιγμα ${escapeHtml(s.title)}"><span class="node-number">${n}</span><span class="node-model">${model(s.id)}</span><strong>${escapeHtml(s.title)}</strong><small>${escapeHtml(s.purpose||s.desc||'')}</small></button>`;
+ const card=(s,n)=>{const image=Number.isFinite(Number(s.page))?pageSrc(s.page):(s.builtInImages?.[0]||'assets/kapachim-logo.png');return `<button class="flow-unit-card" data-id="${s.id}" aria-label="Άνοιγμα ${escapeHtml(s.title)}"><span class="flow-step-number">${n}</span><img src="${image}" alt="${escapeHtml(s.title)}"><span class="flow-unit-copy"><strong>${escapeHtml(s.title)}</strong><small>${escapeHtml(s.purpose||s.desc||'')}</small></span></button>`};
+ const line=(dir='right')=>`<span class="flow-pipe flow-pipe-${dir}" aria-hidden="true"><i></i></span>`;
  c.innerHTML=`<h2 class="section-title">Ροή Μονάδας</h2>
- <p class="flow-help">Η συνεχόμενη γραμμή δείχνει τη διαδρομή της άλμης και καταλήγει κάθε φορά με βέλος στο επόμενο στάδιο. Κάτω από κάθε μονάδα εμφανίζεται συνοπτικά ο σκοπός της.</p>
- <div class="process-map" aria-label="Μακέτα ροής μονάδας άλμης">
-  <svg class="process-lines desktop-lines" viewBox="0 0 1000 760" preserveAspectRatio="none" aria-hidden="true">
-   <defs><marker id="flowArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z"></path></marker></defs>
-   <path d="M250 105 H745" marker-end="url(#flowArrow)"></path>
-   <path d="M825 180 V280 H745" marker-end="url(#flowArrow)"></path>
-   <path d="M650 340 H255" marker-end="url(#flowArrow)"></path>
-   <path d="M175 410 V505 H255" marker-end="url(#flowArrow)"></path>
-   <path d="M350 565 H745" marker-end="url(#flowArrow)"></path>
-   <path d="M825 635 V700 H650" marker-end="url(#flowArrow)"></path>
-   <path d="M555 700 H350" marker-end="url(#flowArrow)"></path>
-   <path d="M255 700 H150 V620" marker-end="url(#flowArrow)"></path>
-   <path class="return-line" d="M100 545 V220 Q100 105 205 105" marker-end="url(#flowArrow)"></path>
-  </svg>
-  <div class="map-grid">
-   ${card(flow[0],1,'a')}${card(flow[1],2,'b')}${card(flow[2],3,'c')}${card(flow[3],4,'d')}${card(flow[4],5,'e')}${card(flow[5],6,'f')}${card(flow[6],7,'g')}${card(flow[7],8,'h')}${card(flow[8],9,'i')}
+ <p class="flow-help">Η μακέτα ακολουθεί την πραγματική κυκλική πορεία της άλμης. Πάτησε σε οποιαδήποτε μονάδα για να ανοίξεις τον αντίστοιχο τομέα.</p>
+ <div class="flow-plant-board">
+  <div class="flow-desktop-layout">
+   <div class="flow-row flow-row-forward">${card(flow[0],1)}${line('right')}${card(flow[1],2)}${line('right')}${card(flow[2],3)}</div>
+   <div class="flow-turn flow-turn-right" aria-hidden="true"><i></i></div>
+   <div class="flow-row flow-row-reverse">${card(flow[5],6)}${line('left')}${card(flow[4],5)}${line('left')}${card(flow[3],4)}</div>
+   <div class="flow-turn flow-turn-left" aria-hidden="true"><i></i></div>
+   <div class="flow-row flow-row-forward">${card(flow[6],7)}${line('right')}${card(flow[7],8)}${line('right')}${card(flow[8],9)}</div>
+   <div class="flow-return-pipe" aria-hidden="true"><span>Επιστροφή άλμης προς Brine Saturation</span><i></i></div>
   </div>
-  <div class="mobile-flow-line" aria-hidden="true"></div>
-  <div class="flow-return-label">Επιστροφή άλμης προς Brine Saturation</div>
+  <div class="flow-mobile-layout">${flow.map((s,i)=>`${card(s,i+1)}${i<flow.length-1?line('down'):''}`).join('')}<div class="flow-mobile-return">↺ Επιστροφή προς Brine Saturation</div></div>
  </div>`;
  c.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>selectSection(sections.find(s=>s.id===b.dataset.id)));
 }
