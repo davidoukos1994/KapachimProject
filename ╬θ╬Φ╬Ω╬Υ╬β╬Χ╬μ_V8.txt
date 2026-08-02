@@ -1,0 +1,11 @@
+KAPACHIM PROJECT V8
+
+1. Στο Supabase SQL Editor άνοιξε νέο Query.
+2. Τρέξε μία φορά το SUPABASE_SETUP_V8.sql.
+3. Επειδή ζήτησες να καθαριστούν όλες οι φωτογραφίες βημάτων, τρέξε και το SUPABASE_CLEAR_STEP_PHOTOS_V8.sql.
+4. Ανέβασε ΟΛΟ το περιεχόμενο του ZIP στο GitHub.
+
+Σημαντικό:
+- Η διαγραφή αρχείου γίνεται πλέον από το Supabase Storage API.
+- Δεν γίνεται direct SQL DELETE στον storage.objects, επειδή η Supabase το απαγορεύει.
+- Το clear SQL αφαιρεί τις εγγραφές από την εφαρμογή. Τυχόν ορφανά storage files δεν εμφανίζονται.

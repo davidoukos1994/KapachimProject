@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1f46" />
   <title>Kapachim Project</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=6.0" />
+  <link rel="stylesheet" href="styles.css?v=7.0" />
 </head>
 <body>
   <div class="app-shell">
@@ -34,12 +34,16 @@
           <div id="breadcrumb" class="breadcrumb">Αρχική</div>
           <div class="title-row">
             <h1 id="pageTitle">Προσωπικό Manual</h1>
-            <button id="nextSectionTop" class="btn primary next-section-top" hidden>Επόμενη σελίδα →</button>
+            <div class="page-nav-actions">
+              <button id="previousPageTop" class="btn secondary" hidden>← Προηγούμενη σελίδα</button>
+              <button id="nextSectionTop" class="btn primary next-section-top" hidden>Επόμενη σελίδα →</button>
+            </div>
           </div>
           <div id="syncStatusMobile" class="sync-status mobile-sync syncing">● Έλεγχος σύνδεσης…</div>
         </div>
         <div class="top-actions">
           <div id="syncStatus" class="sync-status syncing">● Έλεγχος σύνδεσης…</div>
+          <button id="refreshPageButton" class="btn secondary">↻ Ανανέωση</button>
           <button id="systemSettingsButton" class="btn secondary">⚙️ Ρυθμίσεις</button>
           <button id="openOriginal" class="btn secondary">Άνοιγμα αρχικού PDF</button>
           <button id="addTextTop" class="btn primary">+ Πρόσθετο κείμενο</button>
@@ -173,14 +177,14 @@
   <dialog id="imageDialog" class="image-dialog"><button id="closeImage" class="image-close">✕</button><img id="fullImage" alt="Μεγέθυνση" /></dialog>
 
   <script>
-    window.__KAPACHIM_APP_VERSION__ = "v6";
+    window.__KAPACHIM_APP_VERSION__ = "v8";
     window.__KAPACHIM_START_TIME__ = Date.now();
     // Η κατάσταση σύνδεσης ενημερώνεται αυτόματα από το supabase-sync.js.
     // Δεν εμφανίζουμε πλέον ψευδές σφάλμα μετά από σταθερό χρονικό όριο.
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window.__SUPABASE_CDN_ERROR__=true"></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js" onerror="window.__MAMMOTH_CDN_ERROR__=true"></script>
-  <script src="app.js?v=6.0"></script>
-  <script src="supabase-sync.js?v=6.0"></script>
+  <script src="app.js?v=8.0"></script>
+  <script src="supabase-sync.js?v=8.0"></script>
 </body>
 </html>

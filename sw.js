@@ -1,1 +1,3 @@
-self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.registration.unregister().then(()=>self.clients.claim())));self.addEventListener('fetch',()=>{});
+// Kapachim Project v8 - no offline cache; Supabase data must stay fresh.
+self.addEventListener('install',()=>self.skipWaiting());
+self.addEventListener('activate',e=>e.waitUntil(self.registration.unregister()));
