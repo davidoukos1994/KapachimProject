@@ -100,14 +100,10 @@
   <dialog id="photoDialog">
     <form method="dialog" id="photoForm" class="dialog-form">
       <h2>Προσθήκη φωτογραφίας</h2>
-      <label>Κατηγορία
-        <select id="photoCategory" required>
-          <option value="dcs">Εικόνα από DCS</option>
-          <option value="external">Φωτογραφία εξωτερικού χώρου / εξοπλισμού</option>
-        </select>
-      </label>
+      <input id="photoCategory" type="hidden" value="notes" />
       <label>Επιλογή φωτογραφιών<input id="photoFiles" type="file" accept="image/*" multiple required /></label>
-      <p class="dialog-help">Οι φωτογραφίες αποθηκεύονται ξεχωριστά από το αρχικό PDF και εμφανίζονται στη σωστή καρτέλα.</p>
+      <label>Κείμενο κάτω από τη φωτογραφία<textarea id="photoCaption" rows="4" placeholder="π.χ. Θέση βάνας τροφοδοσίας ή σύντομη περιγραφή λειτουργίας"></textarea></label>
+      <p class="dialog-help">Η φωτογραφία και το κείμενο θα εμφανίζονται μαζί στην καρτέλα «Σημειώσεις» του τομέα.</p>
       <div class="dialog-actions">
         <button value="cancel" class="btn secondary">Ακύρωση</button>
         <button value="default" class="btn primary">Αποθήκευση φωτογραφιών</button>
