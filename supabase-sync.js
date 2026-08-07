@@ -5,14 +5,14 @@
 const SUPABASE_URL='https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET='manual-media';
-const APP_VERSION='v9';
+const APP_VERSION='v11';
 
 const diagnostics={
   projectUrl:SUPABASE_URL,
   schemaVersion:'Schema v5',
   apiLabel:'Αναμονή',
   realtimeLabel:'Απενεργοποιημένο (απλή online αποθήκη)',
-  lastSyncLabel:localStorage.getItem('kapachim.lastSave.v9')||'Δεν έχει γίνει',
+  lastSyncLabel:localStorage.getItem('kapachim.lastSave.v11')||'Δεν έχει γίνει',
   loadState:'Αναμονή',
   lastMessage:'',
   latencyLabel:'—'
@@ -35,7 +35,7 @@ function markSaved(message='Αποθηκεύτηκε online'){
   diagnostics.apiLabel='🟢 Συνδεδεμένο';
   diagnostics.lastSyncLabel=new Date().toLocaleString('el-GR');
   diagnostics.lastMessage=message;
-  localStorage.setItem('kapachim.lastSave.v9',diagnostics.lastSyncLabel);
+  localStorage.setItem('kapachim.lastSave.v11',diagnostics.lastSyncLabel);
   setSyncStatus('online',`● ${message}`);
 }
 
