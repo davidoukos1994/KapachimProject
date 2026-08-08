@@ -94,13 +94,13 @@ function updateEditButtons(){
  const isManual=!currentSection.type;
  ['#addTextTop','#addPhotoTop','#addTextSide','#addPhotoSide'].forEach(sel=>{const b=document.querySelector(sel);if(b)b.hidden=isManual;});
 }
-function renderTabs(){const t=$('#tabs');t.innerHTML='';if(currentSection.type==='home'||currentSection.type==='settings')return;let tabs;if(currentSection.type==='documents')tabs=[['documents','Έγγραφα & Διαδικασίες'],['additions','Πρόσθετο υλικό']];else if(currentSection.type==='flow')tabs=[['flow','Διάγραμμα Ροής']];else tabs=[['manual','Επισκόπηση'],['notes','Σημειώσεις']];tabs.forEach(([id,label])=>{const b=document.createElement('button');b.className='tab'+(activeTab===id?' active':'');b.textContent=label;b.onclick=()=>{activeTab=id;renderTabs();renderContent()};t.append(b)})}
-async function renderContent(){const c=$('#content');if(currentSection.type==='home')return renderHome(c);if(currentSection.type==='settings')return renderSystemSettings(c);if(currentSection.type==='documents'&&activeTab==='documents')return renderDocuments(c);if(currentSection.type==='flow')return renderFlow(c);if(activeTab==='manual')return renderManual(c);return renderNotesTab(c)}
+function renderTabs(){const t=$('#tabs');t.innerHTML='';if(currentSection.type==='home'||currentSection.type==='settings')return;let tabs;if(currentSection.type==='documents')tabs=[['documents','Έγγραφα & Διαδικασίες'],['additions','Πρόσθετο υλικό']];else if(currentSection.type==='flow')tabs=[['flow','Διάγραμμα Ροής']];else tabs=[['manual','Επισκόπηση'],['notes','Σημειώσεις'],['procedures','Διαδικασίες']];tabs.forEach(([id,label])=>{const b=document.createElement('button');b.className='tab'+(activeTab===id?' active':'');b.textContent=label;b.onclick=()=>{activeTab=id;renderTabs();renderContent()};t.append(b)})}
+async function renderContent(){const c=$('#content');if(currentSection.type==='home')return renderHome(c);if(currentSection.type==='settings')return renderSystemSettings(c);if(currentSection.type==='documents'&&activeTab==='documents')return renderDocuments(c);if(currentSection.type==='flow')return renderFlow(c);if(activeTab==='manual')return renderManual(c);if(activeTab==='procedures')return renderProceduresTab(c);return renderNotesTab(c)}
 
 function renderSystemSettings(c){
  const st=window.getSupabaseDiagnostics?.()||{};
  const value=(v,fallback='—')=>escapeHtml(String(v??fallback));
- c.innerHTML=`<div class="settings-page"><div class="section-head-row"><div><h2 class="section-title">Ρυθμίσεις Συστήματος</h2><p>Έλεγχος της κοινής online αποθήκης και της τελευταίας αποθήκευσης.</p></div><button class="btn primary run-health-check">Έλεγχος σύνδεσης</button></div><div class="status-grid"><section class="status-card"><span>Internet</span><strong>${navigator.onLine?'🟢 Συνδεδεμένο':'🔴 Χωρίς σύνδεση'}</strong></section><section class="status-card"><span>Supabase API</span><strong>${value(st.apiLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Τρόπος λειτουργίας</span><strong>${value(st.realtimeLabel,'Απλή online αποθήκη')}</strong></section><section class="status-card"><span>Τελευταίος συγχρονισμός</span><strong>${value(st.lastSyncLabel,'Δεν έχει γίνει')}</strong></section><section class="status-card"><span>Έκδοση εφαρμογής</span><strong>v11</strong></section><section class="status-card"><span>Έκδοση βάσης</span><strong>${value(st.schemaVersion,'Schema v1')}</strong></section></div><div class="settings-details"><h3>Διαγνωστικά</h3><dl><div><dt>Project URL</dt><dd>${value(st.projectUrl,'')}</dd></div><div><dt>Κατάσταση φόρτωσης</dt><dd>${value(st.loadState,'Αναμονή')}</dd></div><div><dt>Τελευταίο μήνυμα</dt><dd>${value(st.lastMessage,'—')}</dd></div><div><dt>Χρόνος απόκρισης</dt><dd>${value(st.latencyLabel,'—')}</dd></div></dl><p class="settings-note">Η εφαρμογή φορτώνει τα δεδομένα μία φορά όταν ανοίγει. Για να δεις νεότερες αλλαγές, πάτησε «Ανανέωση». Δεν γίνονται συνεχείς έλεγχοι στο παρασκήνιο.</p></div></div>`;
+ c.innerHTML=`<div class="settings-page"><div class="section-head-row"><div><h2 class="section-title">Ρυθμίσεις Συστήματος</h2><p>Έλεγχος της κοινής online αποθήκης και της τελευταίας αποθήκευσης.</p></div><button class="btn primary run-health-check">Έλεγχος σύνδεσης</button></div><div class="status-grid"><section class="status-card"><span>Internet</span><strong>${navigator.onLine?'🟢 Συνδεδεμένο':'🔴 Χωρίς σύνδεση'}</strong></section><section class="status-card"><span>Supabase API</span><strong>${value(st.apiLabel,'Έλεγχος…')}</strong></section><section class="status-card"><span>Τρόπος λειτουργίας</span><strong>${value(st.realtimeLabel,'Απλή online αποθήκη')}</strong></section><section class="status-card"><span>Τελευταίος συγχρονισμός</span><strong>${value(st.lastSyncLabel,'Δεν έχει γίνει')}</strong></section><section class="status-card"><span>Έκδοση εφαρμογής</span><strong>v12</strong></section><section class="status-card"><span>Έκδοση βάσης</span><strong>${value(st.schemaVersion,'Schema v1')}</strong></section></div><div class="settings-details"><h3>Διαγνωστικά</h3><dl><div><dt>Project URL</dt><dd>${value(st.projectUrl,'')}</dd></div><div><dt>Κατάσταση φόρτωσης</dt><dd>${value(st.loadState,'Αναμονή')}</dd></div><div><dt>Τελευταίο μήνυμα</dt><dd>${value(st.lastMessage,'—')}</dd></div><div><dt>Χρόνος απόκρισης</dt><dd>${value(st.latencyLabel,'—')}</dd></div></dl><p class="settings-note">Η εφαρμογή φορτώνει τα δεδομένα μία φορά όταν ανοίγει. Για να δεις νεότερες αλλαγές, πάτησε «Ανανέωση». Δεν γίνονται συνεχείς έλεγχοι στο παρασκήνιο.</p></div></div>`;
  c.querySelector('.run-health-check').onclick=async()=>{await window.runSupabaseHealthCheck?.(true);renderSystemSettings(c)};
 }
 
@@ -152,12 +152,49 @@ async function renderNotesTab(c){
  const notes=await dbGetNotes(currentSection.id);
  const photos=await dbGetPhotos(currentSection.id);
  const observations=currentSection.notes?`<section class="info-box description observations-before-photos"><h3>Παρατηρήσεις τομέα</h3><p>${escapeHtml(currentSection.notes)}</p></section>`:'';
- c.innerHTML=`<div class="section-head-row notes-head"><div><h2 class="section-title">Σημειώσεις</h2><p>Γράψε ό,τι θέλεις να θυμάσαι για τον τομέα και πρόσθεσε φωτογραφίες με σύντομη λεζάντα από κάτω.</p></div><div class="notes-actions"><button class="btn primary add-note-here">+ Προσθήκη κειμένου</button><button class="btn secondary add-note-photo">+ Προσθήκη φωτογραφίας</button></div></div>${observations}<div id="notesList"></div><h3 class="notes-photo-title">Φωτογραφίες & σημειώσεις</h3><div class="photo-grid notes-photo-grid" id="notesPhotoGrid"></div>`;
+ c.innerHTML=`<div class="section-head-row notes-head"><div><h2 class="section-title">Σημειώσεις</h2><p>Πρόσθεσε σύντομες σημειώσεις ή φωτογραφίες με περιγραφή. Σε μεγάλη οθόνη η περιγραφή εμφανίζεται δίπλα στη φωτογραφία και στο κινητό από κάτω.</p></div><div class="notes-actions"><button class="btn primary add-note-here">+ Προσθήκη κειμένου</button><button class="btn secondary add-note-photo">+ Προσθήκη φωτογραφίας</button></div></div>${observations}<div id="notesList" class="notes-text-list"></div><h3 class="notes-photo-title">Φωτογραφίες & σημειώσεις</h3><div class="notes-media-list" id="notesPhotoGrid"></div>`;
  renderNotes(notes);
- renderPhotoGrid(photos,$('#notesPhotoGrid'),currentSection.id,true);
+ renderNoteMedia(photos,$('#notesPhotoGrid'));
  c.querySelector('.add-note-here').onclick=showTextDialog;
  c.querySelector('.add-note-photo').onclick=()=>showPhotoDialog('notes');
 }
+function renderNoteMedia(photos,host){
+ if(!host)return;
+ host.innerHTML=photos.length?photos.map(p=>`<article class="note-media-card"><button type="button" class="note-media-image" data-src="${p.data}"><img src="${p.data}" alt="Φωτογραφία σημείωσης"></button><div class="note-media-copy"><p>${escapeHtml(p.name||'Χωρίς σημείωση')}</p><button type="button" class="btn danger delete-photo" data-id="${p.id}">Διαγραφή φωτογραφίας</button></div></article>`).join(''):'<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>';
+ host.querySelectorAll('.note-media-image').forEach(b=>b.onclick=()=>openImage(b.dataset.src));
+ host.querySelectorAll('.delete-photo').forEach(b=>b.onclick=async()=>{if(!confirm('Να διαγραφεί αυτή η φωτογραφία;'))return;b.disabled=true;b.textContent='Διαγραφή…';try{await dbDelete('photos',b.dataset.id);await renderContent()}catch(e){b.disabled=false;b.textContent='Διαγραφή φωτογραφίας'}});
+}
+function proceduresSectionKey(sectionId=currentSection.id){return `${sectionId}::procedures`;}
+function procedurePhotoKey(id){return `procedure::${id}`;}
+async function renderProceduresTab(c){
+ const procedures=await dbGetNotes(proceduresSectionKey());
+ c.innerHTML=`<div class="section-head-row procedures-head"><div><h2 class="section-title">Διαδικασίες</h2><p>Καταχώρισε όσες διαδικασίες χρειάζεσαι. Κάθε διαδικασία έχει δικό της όνομα, περιγραφή και φωτογραφίες.</p></div><button class="btn primary add-procedure">+ Νέα διαδικασία</button></div><div id="proceduresList" class="procedures-list"></div>`;
+ const list=c.querySelector('#proceduresList');
+ if(!procedures.length){list.innerHTML='<div class="empty-state">Δεν έχει προστεθεί ακόμη διαδικασία σε αυτόν τον τομέα.</div>'}
+ else{
+   for(const proc of procedures){
+     const photos=await dbGetPhotos(procedurePhotoKey(proc.id));
+     const article=document.createElement('article');article.className='procedure-card';
+     article.innerHTML=`<div class="procedure-card-head"><div><span class="procedure-kicker">ΔΙΑΔΙΚΑΣΙΑ</span><h3>${escapeHtml(proc.title)}</h3></div><div class="procedure-actions"><button class="btn secondary add-procedure-photo" data-id="${proc.id}">+ Φωτογραφία</button><button class="btn danger delete-procedure" data-id="${proc.id}">Διαγραφή</button></div></div><div class="procedure-layout"><div class="procedure-photos" id="procPhotos-${proc.id}"></div><div class="procedure-text">${escapeHtml(proc.body||'').replace(/\n/g,'<br>')}</div></div>`;
+     list.append(article);
+     renderProcedurePhotos(photos,article.querySelector(`#procPhotos-${CSS.escape(String(proc.id))}`));
+   }
+ }
+ list.querySelectorAll('.add-procedure-photo').forEach(b=>b.onclick=()=>showPhotoDialog('procedure',procedurePhotoKey(b.dataset.id)));
+ list.querySelectorAll('.delete-procedure').forEach(b=>b.onclick=async()=>{if(!confirm('Να διαγραφεί αυτή η διαδικασία και οι φωτογραφίες της;'))return;const id=b.dataset.id;b.disabled=true;b.textContent='Διαγραφή…';try{const photos=await dbGetPhotos(procedurePhotoKey(id));for(const p of photos)await dbDelete('photos',p.id);await dbDelete('notes',id);await renderContent()}catch(e){b.disabled=false;b.textContent='Διαγραφή'}});
+ c.querySelector('.add-procedure').onclick=showProcedureDialog;
+}
+function renderProcedurePhotos(photos,host){
+ if(!host)return;
+ host.innerHTML=photos.length?photos.map(p=>`<figure class="procedure-photo"><img src="${p.data}" data-src="${p.data}" alt="Φωτογραφία διαδικασίας"><figcaption>${escapeHtml(p.name||'')}</figcaption><button type="button" class="delete-procedure-photo" data-id="${p.id}" aria-label="Διαγραφή φωτογραφίας">✕</button></figure>`).join(''):'<div class="procedure-photo-empty">Δεν έχει προστεθεί φωτογραφία.</div>';
+ host.querySelectorAll('img').forEach(i=>i.onclick=()=>openImage(i.dataset.src));
+ host.querySelectorAll('.delete-procedure-photo').forEach(b=>b.onclick=async e=>{e.stopPropagation();if(!confirm('Να διαγραφεί αυτή η φωτογραφία;'))return;try{await dbDelete('photos',b.dataset.id);await renderContent()}catch{}});
+}
+function showProcedureDialog(){
+ $('#procedureTitle').value='';$('#procedureBody').value='';$('#procedureImportFile').value='';$('#procedureImportMessage').textContent='Μπορείς να γράψεις, να κάνεις επικόλληση από Σημειώσεις iPhone ή να εισαγάγεις TXT/DOCX.';$('#procedureDialog').showModal();
+}
+async function importProcedureFile(){const file=$('#procedureImportFile').files?.[0],message=$('#procedureImportMessage');try{const text=await readImportedText(file);appendImportedText($('#procedureBody'),text);message.textContent=`✓ Εισήχθη το περιεχόμενο από ${file.name}.`}catch(error){message.textContent=`Δεν έγινε εισαγωγή: ${error.message}`}}
+async function saveProcedure(e){e.preventDefault();const title=$('#procedureTitle').value.trim(),body=$('#procedureBody').value.trim();if(!title)return;await dbAdd('notes',{section:proceduresSectionKey(),title,body,createdAt:Date.now()});$('#procedureDialog').close();renderContent()}
 function renderDocuments(c){const groups=[...new Set(docs.map(d=>d.category||'Έγγραφα'))];c.innerHTML=`<div class="doc-list"><div class="doc-menu">${groups.map(g=>`<div class="doc-group-title">${escapeHtml(g)}</div>${docs.filter(d=>(d.category||'Έγγραφα')===g).map(d=>`<button class="doc-choice ${d.id===currentDoc.id?'active':''}" data-doc="${d.id}">▧ ${d.title}</button>`).join('')}`).join('')}</div><div id="docView"></div></div>`;c.querySelectorAll('.doc-choice').forEach(b=>b.onclick=()=>{currentDoc=docs.find(d=>d.id===b.dataset.doc);renderContent()});renderDocView()}
 function openRelatedDoc(id){const d=docById(id);const docSection=sections.find(s=>s.id==='documents');if(!d||!docSection)return;currentDoc=d;selectSection(docSection)}
 async function renderDocView(){
@@ -212,7 +249,7 @@ async function renderStepPhotos(docId,stepIndex){
  }});
 }
 async function renderInlineAdditions(key=currentSection.id){const host=$('#inlineAdditions');if(!host)return;const notes=await dbGetNotes(key),photos=await dbGetPhotos(key);const observations=currentSection.type!=='documents'&&currentSection.notes?`<section class="info-box description observations-before-photos"><h3>Παρατηρήσεις</h3><p>${escapeHtml(currentSection.notes)}</p></section>`:'';host.innerHTML=`${observations}<div id="notesList"></div><div class="photo-grid" id="photoGrid"></div>`;renderNotes(notes,host.querySelector('#notesList'),key);renderPhotoGrid(photos,host.querySelector('#photoGrid'),key)}
-function renderNotes(notes,host=$('#notesList')){if(!host)return;host.innerHTML=notes.length?notes.map(n=>`<article class="addition-card"><div class="addition-head"><div><h4>${escapeHtml(n.title)}</h4><p>${escapeHtml(n.body)}</p></div>${adminEnabled()?`<button class="btn danger delete-note" data-id="${n.id}">Διαγραφή</button>`:''}</div></article>`).join(''):'<div class="empty-state">Δεν έχει προστεθεί ακόμη πρόσθετο κείμενο.</div>';host.querySelectorAll('.delete-note').forEach(b=>b.onclick=async()=>{await dbDelete('notes',b.dataset.id);renderContent()})}
+function renderNotes(notes,host=$('#notesList')){if(!host)return;host.innerHTML=notes.length?notes.map(n=>`<article class="addition-card note-item-card"><div class="addition-head"><div><h4>${escapeHtml(n.title)}</h4><p>${escapeHtml(n.body)}</p></div><button class="btn danger delete-note" data-id="${n.id}">Διαγραφή</button></div></article>`).join(''):'<div class="empty-state">Δεν έχει προστεθεί ακόμη πρόσθετο κείμενο.</div>';host.querySelectorAll('.delete-note').forEach(b=>b.onclick=async()=>{if(!confirm('Να διαγραφεί αυτή η σημείωση;'))return;b.disabled=true;b.textContent='Διαγραφή…';try{await dbDelete('notes',b.dataset.id);await renderContent()}catch(e){b.disabled=false;b.textContent='Διαγραφή'}})}
 function renderPhotoGrid(photos,host=$('#photoGrid'),sectionId=currentSection.id,showCaption=false){if(!host)return;host.innerHTML=photos.length?photos.map(p=>`<figure class="photo-card"><img src="${p.data}" alt="Πρόσθετη φωτογραφία" data-src="${p.data}">${showCaption&&p.name?`<figcaption>${escapeHtml(p.name)}</figcaption>`:''}${adminEnabled()?`<button type="button" class="delete-photo" data-id="${p.id}">✕</button>`:''}</figure>`).join(''):'<div class="empty-state">Δεν έχουν προστεθεί φωτογραφίες.</div>';host.querySelectorAll('img').forEach(i=>i.onclick=()=>openImage(i.dataset.src));host.querySelectorAll('.delete-photo').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();e.stopPropagation()};b.onclick=async event=>{event.preventDefault();event.stopImmediatePropagation();if(!confirm('Να διαγραφεί αυτή η φωτογραφία;'))return;const id=b.dataset.id;const card=b.closest('.photo-card');b.disabled=true;b.textContent='…';card?.classList.add('deleting');try{await dbDelete('photos',id);await renderContent()}catch(error){card?.classList.remove('deleting');b.disabled=false;b.textContent='✕'}}})}
 function bindZoom(root){root.querySelectorAll('.zoomable').forEach(i=>i.onclick=()=>openImage(i.src));root.querySelectorAll('.zoom-btn').forEach(b=>b.onclick=()=>openImage(root.querySelector('.manual-image').src))}
 function openImage(src){$('#fullImage').src=src;$('#imageDialog').showModal()}
@@ -332,8 +369,8 @@ function resetCurrentDoc(){
 
 function showTextDialog(){$('#noteTitle').value='';$('#noteBody').value='';$('#noteImportFile').value='';$('#noteImportMessage').textContent='Μπορείς επίσης να κάνεις απευθείας αντιγραφή–επικόλληση από τις Σημειώσεις iPhone.';$('#textDialog').showModal()}
 async function saveText(e){e.preventDefault();const title=$('#noteTitle').value.trim(),body=$('#noteBody').value.trim();if(!title||!body)return;await dbAdd('notes',{section:additionKey(),title,body,createdAt:Date.now()});$('#textDialog').close();renderContent()}
-function showPhotoDialog(category='notes'){$('#photoCategory').value=category;$('#photoFiles').value='';$('#photoCaption').value='';$('#photoDialog').showModal()}
-async function handlePhotos(files,category,caption=''){for(const f of files){if(!f.type.startsWith('image/'))continue;const data=await compressImage(f);await dbAdd('photos',{section:additionKey(),category,data,name:caption.trim()||f.name,createdAt:Date.now()})}$('#photoDialog').close();renderContent()}
+let pendingPhotoSection=null;function showPhotoDialog(category='notes',sectionOverride=null){pendingPhotoSection=sectionOverride;$('#photoCategory').value=category;$('#photoFiles').value='';$('#photoCaption').value='';$('#photoDialog').showModal()}
+async function handlePhotos(files,category,caption=''){const targetSection=pendingPhotoSection||additionKey();for(const f of files){if(!f.type.startsWith('image/'))continue;const data=await compressImage(f);await dbAdd('photos',{section:targetSection,category,data,name:caption.trim()||f.name,createdAt:Date.now()})}pendingPhotoSection=null;$('#photoDialog').close();renderContent()}
 function compressImage(file){return new Promise((res,rej)=>{const r=new FileReader();r.onerror=rej;r.onload=()=>{const im=new Image();im.onload=()=>{const max=1600,scale=Math.min(1,max/Math.max(im.width,im.height));const cv=document.createElement('canvas');cv.width=Math.round(im.width*scale);cv.height=Math.round(im.height*scale);cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);res(cv.toDataURL('image/jpeg',.82))};im.src=r.result};r.readAsDataURL(file)})}
 
 function showSectionDialog(section=null){
@@ -354,7 +391,7 @@ $('#searchInput').oninput=e=>buildNav(e.target.value);$('#openSidebar').onclick=
 $('#addTextTop').onclick=showTextDialog;$('#addTextSide').onclick=showTextDialog;$('#textForm').onsubmit=saveText;$('#addPhotoTop').onclick=()=>showPhotoDialog('notes');$('#addPhotoSide').onclick=()=>showPhotoDialog('notes');$('#photoForm').onsubmit=async e=>{e.preventDefault();await handlePhotos([...$('#photoFiles').files],$('#photoCategory').value,$('#photoCaption').value)};
 $('#addSectionTop').onclick=()=>showSectionDialog();$('#addSectionSide').onclick=()=>showSectionDialog();document.querySelectorAll('.edit-section-btn').forEach(b=>b.onclick=()=>editableSection()&&showSectionDialog(currentSection));$('#sectionForm').onsubmit=saveSection;$('#docForm').onsubmit=saveDocEdit;$('#deleteSectionBtn').onclick=deleteCurrentCustomSection;$('#resetSections').onclick=resetSectionData;
 $('#refreshPageButton').onclick=async()=>{const b=$('#refreshPageButton');b.disabled=true;b.textContent='↻ Ανανέωση…';try{await window.reloadKapachimCloudState?.({keepSection:true});await renderContent();}finally{b.disabled=false;b.textContent='↻ Ανανέωση'}};
-$('#importDocFileButton').onclick=importDocumentFile;$('#importNoteFileButton').onclick=importNoteFile;$('#importSectionFileButton').onclick=importSectionFile;$('#systemSettingsButton').onclick=()=>selectSection(settingsSection);
+$('#importDocFileButton').onclick=importDocumentFile;$('#importNoteFileButton').onclick=importNoteFile;$('#importSectionFileButton').onclick=importSectionFile;$('#importProcedureFileButton').onclick=importProcedureFile;$('#procedureForm').onsubmit=saveProcedure;$('#systemSettingsButton').onclick=()=>selectSection(settingsSection);
 $('#closeImage').onclick=()=>$('#imageDialog').close();$('#openOriginal').onclick=()=>window.open('original-manual.pdf','_blank');
 function setupSectionSwipe(){
  const surface=document.querySelector('.main-card');
@@ -375,6 +412,14 @@ function setupSectionSwipe(){
   if(destination){selectSection(destination);window.scrollTo({top:0,behavior:'smooth'});}
  },{passive:true});
 }
+
+document.addEventListener('keydown',event=>{
+ if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey)return;
+ if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable||document.querySelector('dialog[open]'))return;
+ if(currentSection.type==='home'||currentSection.type==='documents'||currentSection.type==='flow'||currentSection.type==='settings')return;
+ if(event.key==='ArrowRight'){const next=nextManualSection();if(next){event.preventDefault();selectSection(next);window.scrollTo({top:0,behavior:'smooth'})}}
+ if(event.key==='ArrowLeft'){const prev=previousManualSection();if(prev){event.preventDefault();selectSection(prev);window.scrollTo({top:0,behavior:'smooth'})}}
+});
 
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}if('caches' in window){caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});}setupSectionSwipe();buildNav();selectSection(homeSection);
 

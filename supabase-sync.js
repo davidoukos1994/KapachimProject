@@ -5,14 +5,14 @@
 const SUPABASE_URL='https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET='manual-media';
-const APP_VERSION='v11';
+const APP_VERSION='v12';
 
 const diagnostics={
   projectUrl:SUPABASE_URL,
   schemaVersion:'Schema v5',
   apiLabel:'Αναμονή',
   realtimeLabel:'Απενεργοποιημένο (απλή online αποθήκη)',
-  lastSyncLabel:localStorage.getItem('kapachim.lastSave.v11')||'Δεν έχει γίνει',
+  lastSyncLabel:localStorage.getItem('kapachim.lastSave.v12')||'Δεν έχει γίνει',
   loadState:'Αναμονή',
   lastMessage:'',
   latencyLabel:'—'
@@ -35,7 +35,7 @@ function markSaved(message='Αποθηκεύτηκε online'){
   diagnostics.apiLabel='🟢 Συνδεδεμένο';
   diagnostics.lastSyncLabel=new Date().toLocaleString('el-GR');
   diagnostics.lastMessage=message;
-  localStorage.setItem('kapachim.lastSave.v11',diagnostics.lastSyncLabel);
+  localStorage.setItem('kapachim.lastSave.v12',diagnostics.lastSyncLabel);
   setSyncStatus('online',`● ${message}`);
 }
 
@@ -178,9 +178,12 @@ async function deletePhoto(id){
 }
 
 async function deleteNote(id){
-  await rpc('kapachim_delete_note',{p_id:String(id)});
+  let directError=null;
+  try{
+    await request(`manual_notes?id=eq.${encodeURIComponent(id)}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+  }catch(error){directError=error;try{await rpc('kapachim_delete_note',{p_id:String(id)});}catch{}}
   const verify=await request(`manual_notes?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
-  if(verify?.length)throw new Error('Το κείμενο δεν διαγράφηκε από τη βάση.');
+  if(verify?.length)throw new Error(`Το κείμενο δεν διαγράφηκε από τη βάση.${directError?' '+directError.message:''}`);
 }
 
 dbAdd=(store,value)=>queued(async()=>{

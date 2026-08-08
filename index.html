@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1f46" />
   <title>Kapachim Project</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=7.0" />
+  <link rel="stylesheet" href="styles.css?v=12.0" />
 </head>
 <body>
   <div class="app-shell">
@@ -103,7 +103,7 @@
       <input id="photoCategory" type="hidden" value="notes" />
       <label>Επιλογή φωτογραφιών<input id="photoFiles" type="file" accept="image/*" multiple required /></label>
       <label>Κείμενο κάτω από τη φωτογραφία<textarea id="photoCaption" rows="4" placeholder="π.χ. Θέση βάνας τροφοδοσίας ή σύντομη περιγραφή λειτουργίας"></textarea></label>
-      <p class="dialog-help">Η φωτογραφία και το κείμενο θα εμφανίζονται μαζί στην καρτέλα «Σημειώσεις» του τομέα.</p>
+      <p class="dialog-help">Η φωτογραφία και το κείμενο θα εμφανίζονται μαζί στην αντίστοιχη καρτέλα του τομέα.</p>
       <div class="dialog-actions">
         <button value="cancel" class="btn secondary">Ακύρωση</button>
         <button value="default" class="btn primary">Αποθήκευση φωτογραφιών</button>
@@ -167,20 +167,31 @@
     </form>
   </dialog>
 
-
-
+  <dialog id="procedureDialog">
+    <form method="dialog" id="procedureForm" class="dialog-form">
+      <h2>Νέα διαδικασία</h2>
+      <label>Όνομα διαδικασίας<input id="procedureTitle" required maxlength="140" placeholder="π.χ. Καθαρισμός φίλτρου F-201A" /></label>
+      <label>Περιγραφή / βήματα<textarea id="procedureBody" rows="12" placeholder="Γράψε τα βήματα, οδηγίες ή χρήσιμες σημειώσεις…"></textarea></label>
+      <div class="doc-import-box">
+        <label>Εισαγωγή από TXT ή Word DOCX<input id="procedureImportFile" type="file" accept=".txt,.docx,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" /></label>
+        <button type="button" id="importProcedureFileButton" class="btn secondary">Εισαγωγή στο κείμενο</button>
+        <p id="procedureImportMessage" class="dialog-help">Μπορείς επίσης να κάνεις copy-paste από τις Σημειώσεις iPhone.</p>
+      </div>
+      <div class="dialog-actions"><button value="cancel" class="btn secondary">Ακύρωση</button><button value="default" class="btn primary">Αποθήκευση διαδικασίας</button></div>
+    </form>
+  </dialog>
 
   <dialog id="imageDialog" class="image-dialog"><button id="closeImage" class="image-close">✕</button><img id="fullImage" alt="Μεγέθυνση" /></dialog>
 
   <script>
-    window.__KAPACHIM_APP_VERSION__ = "v9";
+    window.__KAPACHIM_APP_VERSION__ = "v12";
     window.__KAPACHIM_START_TIME__ = Date.now();
     // Η κατάσταση σύνδεσης ενημερώνεται αυτόματα από το supabase-sync.js.
     // Δεν εμφανίζουμε πλέον ψευδές σφάλμα μετά από σταθερό χρονικό όριο.
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window.__SUPABASE_CDN_ERROR__=true"></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js" onerror="window.__MAMMOTH_CDN_ERROR__=true"></script>
-  <script src="app.js?v=9.0"></script>
-  <script src="supabase-sync.js?v=9.0"></script>
+  <script src="app.js?v=12.0"></script>
+  <script src="supabase-sync.js?v=12.0"></script>
 </body>
 </html>
