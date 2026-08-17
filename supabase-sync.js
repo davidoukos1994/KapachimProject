@@ -5,14 +5,14 @@
 const SUPABASE_URL='https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET='manual-media';
-const APP_VERSION='v12';
+const APP_VERSION='v13';
 
 const diagnostics={
   projectUrl:SUPABASE_URL,
   schemaVersion:'Schema v5',
   apiLabel:'Αναμονή',
   realtimeLabel:'Απενεργοποιημένο (απλή online αποθήκη)',
-  lastSyncLabel:localStorage.getItem('kapachim.lastSave.v12')||'Δεν έχει γίνει',
+  lastSyncLabel:localStorage.getItem('kapachim.lastSave.v13')||'Δεν έχει γίνει',
   loadState:'Αναμονή',
   lastMessage:'',
   latencyLabel:'—'
@@ -35,7 +35,7 @@ function markSaved(message='Αποθηκεύτηκε online'){
   diagnostics.apiLabel='🟢 Συνδεδεμένο';
   diagnostics.lastSyncLabel=new Date().toLocaleString('el-GR');
   diagnostics.lastMessage=message;
-  localStorage.setItem('kapachim.lastSave.v12',diagnostics.lastSyncLabel);
+  localStorage.setItem('kapachim.lastSave.v13',diagnostics.lastSyncLabel);
   setSyncStatus('online',`● ${message}`);
 }
 
@@ -280,6 +280,20 @@ async function loadState({keepSection=true}={}){
 window.reloadKapachimCloudState=loadState;
 window.automaticKapachimConnect=({reload=true}={})=>reload?loadState({keepSection:true}):healthCheck(true);
 
+async function clearBrineFiltrationNotesV13Once(){
+  const section=sections.find(s=>s.id==='brine-filtration');
+  if(!section || section.__v13NotesCleanupDone)return;
+  try{
+    const rows=await request('manual_notes?select=id&section=eq.brine-filtration');
+    for(const row of (rows||[]))await deleteNote(row.id);
+    section.__v13NotesCleanupDone=true;
+    await pushState();
+    diagnostics.lastMessage='Οι παλιές σημειώσεις Brine Filtration καθαρίστηκαν.';
+  }catch(error){
+    console.warn('V13 note cleanup failed:',error);
+  }
+}
+
 async function boot(){
   try{
     if('serviceWorker' in navigator){
@@ -293,7 +307,8 @@ async function boot(){
   }catch{}
 
   // Μία μόνο online φόρτωση κατά την εκκίνηση. Καμία συνεχή επανάληψη.
-  await loadState({keepSection:true});
+  const loaded=await loadState({keepSection:true});
+  if(loaded)await clearBrineFiltrationNotesV13Once();
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
