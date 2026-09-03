@@ -256,3 +256,17 @@ dialog{border:0;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.25);width:
 /* v14 compact manual navigation */
 .tabs-row{display:flex;align-items:stretch;border-bottom:1px solid var(--line);background:#fbfcfe}.tabs-row .tabs{flex:1;min-width:0;border-bottom:0}.compact-section-nav{display:flex;align-items:center;gap:5px;padding:7px 10px 6px 4px}.compact-nav-btn{width:36px;height:36px;border:1px solid #cbd8e8;border-radius:9px;background:#fff;color:#24426f;font-size:27px;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}.compact-nav-btn:active{transform:scale(.96)}.compact-nav-btn:disabled{opacity:.3;cursor:default}.manual-sector-mode .topbar{position:sticky;min-height:48px;padding:8px 14px;justify-content:flex-start}.manual-sector-mode .topbar-copy,.manual-sector-mode .top-actions{display:none}.manual-sector-mode #openSidebar{display:inline-flex;margin:0}.manual-sector-mode .content-grid{padding-top:8px}.manual-sector-mode .main-card{margin-top:0}
 @media(max-width:760px){.manual-sector-mode .topbar{padding:7px 10px;min-height:44px}.manual-sector-mode .content-grid{padding-top:6px}.compact-section-nav{padding-right:7px}.compact-nav-btn{width:34px;height:34px;font-size:25px}.tabs-row .tabs{padding-top:6px}.tabs-row .tab{padding:10px 11px;font-size:.95rem}}
+
+/* V15 mobile scroll fix: on non-sector pages the large header scrolls away
+   instead of covering the document content. Sector pages keep the compact
+   sticky header introduced in V14. */
+@media(max-width:760px){
+  body:not(.manual-sector-mode) .topbar{
+    position:relative;
+    top:auto;
+    z-index:10;
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+    background:#fff;
+  }
+}
