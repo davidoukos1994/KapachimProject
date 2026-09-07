@@ -34,12 +34,12 @@
           <div id="breadcrumb" class="breadcrumb">Αρχική</div>
           <div class="title-row">
             <h1 id="pageTitle">Προσωπικό Manual</h1>
-            <div class="page-nav-actions">
-              <button id="previousPageTop" class="btn secondary" hidden>← Προηγούμενη σελίδα</button>
-              <button id="nextSectionTop" class="btn primary next-section-top" hidden>Επόμενη σελίδα →</button>
-            </div>
           </div>
           <div id="syncStatusMobile" class="sync-status mobile-sync syncing">● Φόρτωση online…</div>
+        </div>
+        <div id="globalCompactNav" class="global-compact-nav" hidden>
+          <button id="globalPrev" class="compact-nav-btn" aria-label="Προηγούμενη σελίδα" title="Προηγούμενη σελίδα">‹</button>
+          <button id="globalNext" class="compact-nav-btn" aria-label="Επόμενη σελίδα" title="Επόμενη σελίδα">›</button>
         </div>
         <div class="top-actions">
           <div id="syncStatus" class="sync-status syncing">● Φόρτωση online…</div>
@@ -55,7 +55,7 @@
 
       <section class="content-grid">
         <div class="main-card">
-          <div class="tabs-row"><div id="tabs" class="tabs"></div><div id="compactSectionNav" class="compact-section-nav" hidden><button id="compactPrev" class="compact-nav-btn" aria-label="Προηγούμενος τομέας" title="Προηγούμενος τομέας">‹</button><button id="compactNext" class="compact-nav-btn" aria-label="Επόμενος τομέας" title="Επόμενος τομέας">›</button></div></div>
+          <div class="tabs-row"><div id="tabs" class="tabs"></div></div>
           <div id="content"></div>
         </div>
         <aside class="tools-panel">
