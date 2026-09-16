@@ -5,7 +5,7 @@
 const SUPABASE_URL='https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET='manual-media';
-const APP_VERSION='v13';
+const APP_VERSION='v18';
 
 const diagnostics={
   projectUrl:SUPABASE_URL,
@@ -166,10 +166,13 @@ async function cloudGet(store,section){
 }
 
 async function deletePhoto(id){
-  const result=await rpc('kapachim_delete_photo',{p_id:String(id)});
-  const path=Array.isArray(result)?result[0]:result;
-  const verify=await request(`manual_photos?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
-  if(verify?.length)throw new Error('Η φωτογραφία παραμένει στη βάση.');
+  // Delete through the table endpoint: older installations have both text and
+  // uuid RPC overloads, which PostgREST cannot distinguish from JSON arguments.
+  const url=`manual_photos?id=eq.${encodeURIComponent(id)}&select=id,storage_path`;
+  const removed=await request(url,{method:'DELETE',headers:{Prefer:'return=representation'}});
+  if(!Array.isArray(removed)||removed.length!==1)
+    throw new Error('Η φωτογραφία δεν βρέθηκε ή δεν επιτρέπεται η διαγραφή της.');
+  const path=removed[0].storage_path;
   if(path){
     const {error}=await supabaseClient.storage.from(STORAGE_BUCKET).remove([String(path)]);
     if(error)throw new Error(`Η εγγραφή διαγράφηκε, αλλά το αρχείο εικόνας όχι: ${error.message}`);
