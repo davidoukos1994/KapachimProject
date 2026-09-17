@@ -286,3 +286,5 @@ body:not(.home-mode) .main-card{margin-top:0}
  body:not(.home-mode) #content{padding-top:10px}
  .global-compact-nav .compact-nav-btn{width:32px;height:32px;font-size:24px;border-radius:8px}
 }
+
+.backup-list{display:grid;gap:10px;margin-top:16px}.backup-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #d6dce7;border-radius:12px}.backup-row span{display:grid;gap:3px}.backup-row small{color:#566274}@media(max-width:480px){.backup-row{align-items:flex-start}.backup-row .btn{flex-shrink:0}}

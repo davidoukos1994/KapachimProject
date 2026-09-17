@@ -5,7 +5,7 @@
 const SUPABASE_URL='https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET='manual-media';
-const APP_VERSION='v18';
+const APP_VERSION='v19';
 
 const diagnostics={
   projectUrl:SUPABASE_URL,
@@ -172,11 +172,7 @@ async function deletePhoto(id){
   const removed=await request(url,{method:'DELETE',headers:{Prefer:'return=representation'}});
   if(!Array.isArray(removed)||removed.length!==1)
     throw new Error('Η φωτογραφία δεν βρέθηκε ή δεν επιτρέπεται η διαγραφή της.');
-  const path=removed[0].storage_path;
-  if(path){
-    const {error}=await supabaseClient.storage.from(STORAGE_BUCKET).remove([String(path)]);
-    if(error)throw new Error(`Η εγγραφή διαγράφηκε, αλλά το αρχείο εικόνας όχι: ${error.message}`);
-  }
+  // The object stays in Storage so a snapshot can restore its metadata and image.
   return true;
 }
 
@@ -209,6 +205,8 @@ dbGetPhotos=section=>cloudGet('photos',section);
 dbDelete=(store,id)=>queued(async()=>{
   setSyncStatus('syncing','● Διαγραφή…');
   try{
+    // Prevent irreversible deletion until the server-side snapshot triggers are installed.
+    await request('kapachim_backups?select=id&limit=1');
     if(store==='photos')await deletePhoto(id); else await deleteNote(id);
     markSaved('Η διαγραφή αποθηκεύτηκε online');
     return true;
@@ -283,6 +281,27 @@ async function loadState({keepSection=true}={}){
 window.reloadKapachimCloudState=loadState;
 window.automaticKapachimConnect=({reload=true}={})=>reload?loadState({keepSection:true}):healthCheck(true);
 
+window.listKapachimBackups=()=>request('kapachim_backups?select=id,created_at,reason&order=created_at.desc&limit=100');
+window.getKapachimPrintData=async()=>{
+  const all=async table=>{
+    const rows=[];
+    for(let offset=0;;offset+=500){
+      const page=await request(`${table}?select=*&order=created_at.asc&limit=500&offset=${offset}`);
+      rows.push(...page);
+      if(page.length<500)return rows;
+    }
+  };
+  const [notes,photos]=await Promise.all([all('manual_notes'),all('manual_photos')]);
+  return {notes,photos:photos.map(p=>({...p,data:photoUrl(p.storage_path,p.id)}))};
+};
+window.createKapachimBackup=()=>queued(()=>rpc('kapachim_create_backup',{p_reason:'Χειροκίνητο αντίγραφο'}));
+window.restoreKapachimBackup=id=>queued(async()=>{
+  clearTimeout(stateTimer);
+  await rpc('kapachim_restore_backup',{p_backup_id:id});
+  await loadState({keepSection:false});
+  markSaved('Επαναφέρθηκε το αντίγραφο ασφαλείας');
+});
+
 async function clearBrineFiltrationNotesV13Once(){
   const section=sections.find(s=>s.id==='brine-filtration');
   if(!section || section.__v13NotesCleanupDone)return;
@@ -311,7 +330,7 @@ async function boot(){
 
   // Μία μόνο online φόρτωση κατά την εκκίνηση. Καμία συνεχή επανάληψη.
   const loaded=await loadState({keepSection:true});
-  if(loaded)await clearBrineFiltrationNotesV13Once();
+  // Do not run historic one-time cleanup: it can remove user notes.
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
