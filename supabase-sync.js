@@ -5,7 +5,7 @@
 const SUPABASE_URL='https://bvseqstpqdzferqzbsgf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_XsRZNuMARbmE4UROxzvuaQ_hfOv8nPS';
 const STORAGE_BUCKET='manual-media';
-const APP_VERSION='v19';
+const APP_VERSION='v20';
 
 const diagnostics={
   projectUrl:SUPABASE_URL,
@@ -259,7 +259,7 @@ async function loadState({keepSection=true}={}){
     const data=Array.isArray(result)?result[0]:result;
     if(data?.sections?.length||data?.docs?.length){
       if(data.sections?.length)sections=data.sections;
-      if(data.docs?.length)docs=data.docs;
+      if(data.docs?.length)docs=[...data.docs,...baseDocs.filter(base=>!data.docs.some(doc=>doc.id===base.id))];
       currentDoc=docs.find(d=>d.id===docId)||docs[0];
       localSaveSections();
       localSaveDocs();
